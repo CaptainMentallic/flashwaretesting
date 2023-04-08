@@ -24,7 +24,7 @@ function getAssetGithub(path) -- MainScript.lua or assets/AddItem.png
 
         if not isfile(workspacePath) then
             local suc, res = pcall(function()
-                return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/FlashWareRoblox/main/" .. path, true)
+                return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/" .. path, true)
             end)
             assert(suc, res)
             assert(res ~= "404: Not Found", res)
@@ -63,6 +63,7 @@ else
 end
 
 local GuiLibrary = loadstring(getAssetGithub("GuiLibrary.lua"))()
+print(GuiLibrary)
 shared.GuiLibrary = GuiLibrary
 
 assert(not shared.flashExecuted, "FlashWare is already injected!")
