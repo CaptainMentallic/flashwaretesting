@@ -1,8 +1,5 @@
 repeat task.wait() until game:IsLoaded()
 
-local GuiLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/GuiLibrary.lua", true))()
-shared.GuiLibrary = GuiLibrary
-
 -- test if this actualy works or not
 function getAssetGithub(path) -- MainScript.lua or assets/AddItem.png
 	local workspacePath = "flash/" .. path
@@ -64,6 +61,9 @@ else
 	makefolder("flash/assets")
 	makefolder("flash/GameModules")
 end
+
+local GuiLibrary = loadstring(getAssetGithub("GuiLibrary.lua"))()
+shared.GuiLibrary = GuiLibrary
 
 assert(not shared.flashExecuted, "FlashWare is already injected!")
 shared.flashExecuted = true
