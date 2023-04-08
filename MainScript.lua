@@ -1,6 +1,6 @@
 repeat task.wait() until game:IsLoaded()
 
-local GuiLibrary = loadstring(readfile("flash/GuiLibrary.lua"))()
+local GuiLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/GuiLibrary.lua", true))()
 shared.GuiLibrary = GuiLibrary
 
 -- test if this actualy works or not
