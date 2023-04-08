@@ -63,7 +63,7 @@ else
 end
 
 local GuiLibrary = loadstring(getAssetGithub("GuiLibrary.lua"))()
-print(GuiLibrary)
+print(getAssetGithub("GuiLibrary.lua"))
 shared.GuiLibrary = GuiLibrary
 
 assert(not shared.flashExecuted, "FlashWare is already injected!")
