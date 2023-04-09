@@ -5,9 +5,10 @@ local updatedVersion = game:HttpGet("https://raw.githubusercontent.com/CaptainMe
 local GameModulesFolder = "flash/GameModules"
 local AssetsFolder = "flash/assets"
 
+shared.FlashConnections = {}
+
 function downloadFromGithub(path)
 	local workspacePath = "flash/" .. path
-
     if not isfile(workspacePath) then
         task.spawn(function()
             local textlabel = Instance.new("TextLabel")
@@ -19,7 +20,7 @@ function downloadFromGithub(path)
             textlabel.Font = Enum.Font.SourceSans
             textlabel.TextColor3 = Color3.new(1, 1, 1)
             textlabel.Position = UDim2.new(0, 0, 0, -36)
-            --textlabel.Parent = GuiLibrary.MainGui
+            --textlabel.Parent = GuiLibrary.MainUi
             repeat
                 task.wait()
             until isfile(path)
@@ -27,15 +28,16 @@ function downloadFromGithub(path)
         end)
 
         if not isfile(workspacePath) then
-            local suc, res = pcall(function()
+            local success, result = pcall(function()
                 return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/" .. path, true)
             end)
-            assert(suc, res)
-            assert(res ~= "404: Not Found", res)
-			if res ~= "404: Not Found" then
-				writefile(workspacePath, res)
+            assert(success, result)
+            assert(result ~= "404: Not Found", result)
+			if result ~= "404: Not Found" then
+				writefile(workspacePath, result)
 			else
-				assert(false, "There was an error with the downloadFromGithub function. Show this to the developer (" + workspacePath + ")")
+				return false
+				-- assert(false, "There was an error with the downloadFromGithub function. Show this to the developer (" + workspacePath + ")")
 			end
         end
     end
@@ -76,85 +78,123 @@ else
 	makefolder(GameModulesFolder)
 end
 
+-- test everything below this comment everything above works and already has been tested
+
+debug.getupvalue()
+debug.setconstant()
+
+assert(not shared.flashExecuted, "FlashWare is already injected!")
+shared.flashExecuted = true
+
+shared.downloadFromGithub = downloadFromGithub
+
 local GuiLibrary = loadstring(downloadFromGithub("GuiLibrary.lua"))()
 print(downloadFromGithub("GuiLibrary.lua"))
 print(GuiLibrary)
 shared.GuiLibrary = GuiLibrary
 
-assert(not shared.flashExecuted, "FlashWare is already injected!")
-shared.flashExecuted = true
-shared.downloadFromGithub = downloadFromGithub
+
+GuiLibrary.SelfDestruct = function()
+	flashExecuted = false
+	game:GetService("UserInputService").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+
+	for i,v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
+		if (v.Type == "Button" or v.Type == "OptionsButton") and v.Api.Enabled then
+			v.Api.ToggleButton(false)
+		end
+	end
+
+	for i,v in pairs(shared.FlashConnections) do 
+		v:Disconnect()
+	end
+	for i,v in pairs(TextGUIObjects) do 
+		for i2,v2 in pairs(v) do 
+			v2.Visible = false
+			v2:Destroy()
+			v[i2] = nil
+		end
+	end
+
+	GuiLibrary.SelfDestructEvent:Fire()
+	shared.flashExecuted = nil
+	shared.GuiLibrary = nil
+	GuiLibrary.KeyInputHandler:Disconnect()
+	GuiLibrary.KeyInputHandler2:Disconnect()
+
+	for _, connection in ipairs(Connections) do
+		if connection then
+			local success, error = pcall(function()
+				if connection.Disconnect then
+					connection:Disconnect()
+				elseif connection.disconnect then
+					connection:disconnect()
+				end
+			end)
+			if not success then
+				warn("Error disconnecting connection: " .. error)
+			end
+		end
+	end
+	
+	GuiLibrary.MainUi:Destroy()
+	game:GetService("RunService"):SetRobloxGuiFocused(false)	
+end
  
 local GUI = GuiLibrary.CreateMainWindow()
 local Combat = GuiLibrary.CreateWindow({
 	Name = "Combat", 
-	Icon = "vape/assets/CombatIcon.png", 
+	Icon = "assets/CombatIcon.png", 
 	IconSize = 15
 })
 local Blatant = GuiLibrary.CreateWindow({
 	Name = "Blatant", 
-	Icon = "vape/assets/BlatantIcon.png", 
+	Icon = "assets/BlatantIcon.png", 
 	IconSize = 16
 })
 local Render = GuiLibrary.CreateWindow({
 	Name = "Render", 
-	Icon = "vape/assets/RenderIcon.png", 
+	Icon = "assets/RenderIcon.png", 
 	IconSize = 17
 })
 local Utility = GuiLibrary.CreateWindow({
 	Name = "Utility", 
-	Icon = "vape/assets/UtilityIcon.png", 
+	Icon = "assets/UtilityIcon.png", 
 	IconSize = 17
 })
 local World = GuiLibrary.CreateWindow({
 	Name = "World", 
-	Icon = "vape/assets/WorldIcon.png", 
+	Icon = "assets/WorldIcon.png", 
 	IconSize = 16
-})
-local Friends = GuiLibrary.CreateWindow2({
-	Name = "Friends", 
-	Icon = "vape/assets/FriendsIcon.png", 
-	IconSize = 17
-})
-local Targets = GuiLibrary.CreateWindow2({
-	Name = "Targets", 
-	Icon = "vape/assets/FriendsIcon.png", 
-	IconSize = 17
-})
-local Profiles = GuiLibrary.CreateWindow2({
-	Name = "Profiles", 
-	Icon = "vape/assets/ProfilesIcon.png", 
-	IconSize = 19
 })
 GUI.CreateDivider()
 GUI.CreateButton({
 	Name = "Combat", 
 	Function = function(callback) Combat.SetVisible(callback) end, 
-	Icon = "vape/assets/CombatIcon.png", 
+	Icon = "assets/CombatIcon.png", 
 	IconSize = 15
 })
 GUI.CreateButton({
 	Name = "Blatant", 
 	Function = function(callback) Blatant.SetVisible(callback) end, 
-	Icon = "vape/assets/BlatantIcon.png", 
+	Icon = "assets/BlatantIcon.png", 
 	IconSize = 16
 })
 GUI.CreateButton({
 	Name = "Render", 
 	Function = function(callback) Render.SetVisible(callback) end, 
-	Icon = "vape/assets/RenderIcon.png", 
+	Icon = "assets/RenderIcon.png", 
 	IconSize = 17
 })
 GUI.CreateButton({
 	Name = "Utility", 
 	Function = function(callback) Utility.SetVisible(callback) end, 
-	Icon = "vape/assets/UtilityIcon.png", 
+	Icon = "assets/UtilityIcon.png", 
 	IconSize = 17
 })
 GUI.CreateButton({
 	Name = "World", 
 	Function = function(callback) World.SetVisible(callback) end, 
-	Icon = "vape/assets/WorldIcon.png", 
+	Icon = "assets/WorldIcon.png", 
 	IconSize = 16
 })
 GUI.CreateDivider("MISC")
@@ -164,7 +204,6 @@ GUI.CreateButton({
 	Function = function(callback) Targets.SetVisible(callback) end, 
 })
 
-local oldTargetRefresh = TargetsTextList.RefreshValues
 
 local TextGUI = GuiLibrary.CreateCustomWindow({
 	Name = "Text GUI", 
@@ -183,7 +222,6 @@ local TextGUIMode = {Value = "Normal"}
 local TextGUISortMode = {Value = "Alphabetical"}
 local TextGUIBackgroundToggle = {Enabled = false}
 local TextGUIObjects = {Logo = {}, Labels = {}, ShadowLabels = {}, Backgrounds = {}}
-local TextGUIConnections = {}
 local TextGUIFormatted = {}
 local VapeLogoFrame = Instance.new("Frame")
 VapeLogoFrame.BackgroundTransparency = 1
@@ -271,9 +309,9 @@ VapeCustomTextShadow.TextTransparency = 0.5
 VapeCustomTextShadow.TextColor3 = Color3.new()
 VapeCustomTextShadow.Position = UDim2.new(0, 1, 0, 1)
 VapeCustomTextShadow.Parent = VapeCustomText
-VapeCustomText:GetPropertyChangedSignal("TextXAlignment"):Connect(function()
+table.insert(shared.FlashConnections, VapeCustomText:GetPropertyChangedSignal("TextXAlignment"):Connect(function()
 	VapeCustomTextShadow.TextXAlignment = VapeCustomText.TextXAlignment
-end)
+end))
 local VapeBackground = Instance.new("Frame")
 VapeBackground.BackgroundTransparency = 1
 VapeBackground.BorderSizePixel = 0
@@ -292,7 +330,7 @@ local VapeScale = Instance.new("UIScale")
 VapeScale.Parent = VapeLogoFrame
 
 local function TextGUIUpdate()
-	local scaledgui = vapeInjected and GuiLibrary.MainGui.ScaledGui
+	local scaledgui = vapeInjected and GuiLibrary.MainUi.ScaledGui
 	if scaledgui and scaledgui.Visible then
 		local formattedText = ""
 		local moduleList = {}
@@ -423,22 +461,25 @@ local function TextGUIUpdate()
 	end
 end
 
-TextGUI.GetCustomChildren().Parent:GetPropertyChangedSignal("Position"):Connect(TextGUIUpdate)
-GuiLibrary.UpdateHudEvent.Event:Connect(TextGUIUpdate)
-VapeScale:GetPropertyChangedSignal("Scale"):Connect(function()
+table.insert(shared.FlashConnections, 
+	TextGUI.GetCustomChildren().Parent:GetPropertyChangedSignal("Position"):Connect(TextGUIUpdate)
+)
+table.insert(shared.FlashConnections, 
+	GuiLibrary.UpdateHudEvent.Event:Connect(TextGUIUpdate)
+)
+
+table.insert(shared.FlashConnections, VapeScale:GetPropertyChangedSignal("Scale"):Connect(function()
 	local childrenobj = TextGUI.GetCustomChildren()
 	local check = (childrenobj.Parent.Position.X.Offset + childrenobj.Parent.Size.X.Offset / 2) >= (gameCamera.ViewportSize.X / 2)
 	childrenobj.Position = UDim2.new((check and -(VapeScale.Scale - 1) or 0), (check and 0 or -6 * (VapeScale.Scale - 1)), 1, -6 * (VapeScale.Scale - 1))
 	TextGUIUpdate()
-end)
+end))
+
 TextGUIMode = TextGUI.CreateDropdown({
 	Name = "Mode",
 	List = {"Normal", "Drawing"},
 	Function = function(val)
 		VapeLogoFrame.Visible = val == "Normal"
-		for i,v in pairs(TextGUIConnections) do 
-			v:Disconnect()
-		end
 		for i,v in pairs(TextGUIObjects) do 
 			for i2,v2 in pairs(v) do 
 				v2.Visible = false
@@ -496,58 +537,58 @@ TextGUIMode = TextGUI.CreateDropdown({
 			table.insert(TextGUIObjects.Logo, VapeLogo4Drawing)
 			table.insert(TextGUIObjects.Logo, VapeCustomDrawingText)
 			table.insert(TextGUIObjects.Logo, VapeCustomDrawingShadow)
-			table.insert(TextGUIConnections, VapeLogo:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+			table.insert(shared.FlashConnections, VapeLogo:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
 				VapeLogoDrawing.Position = VapeLogo.AbsolutePosition + Vector2.new(0, 36)
 				VapeLogoShadowDrawing.Position = VapeLogo.AbsolutePosition + Vector2.new(1, 37)
 			end))
-			table.insert(TextGUIConnections, VapeLogo:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+			table.insert(shared.FlashConnections, VapeLogo:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
 				VapeLogoDrawing.Size = VapeLogo.AbsoluteSize
 				VapeLogoShadowDrawing.Size = VapeLogo.AbsoluteSize
 				VapeCustomDrawingText.Size = 30 * VapeScale.Scale
 				VapeCustomDrawingShadow.Size = 30 * VapeScale.Scale
 			end))
-			table.insert(TextGUIConnections, VapeLogoV4:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+			table.insert(shared.FlashConnections, VapeLogoV4:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
 				VapeLogoV4Drawing.Position = VapeLogoV4.AbsolutePosition + Vector2.new(0, 36)
 				VapeLogo4Drawing.Position = VapeLogoV4.AbsolutePosition + Vector2.new(1, 37)
 			end))
-			table.insert(TextGUIConnections, VapeLogoV4:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+			table.insert(shared.FlashConnections, VapeLogoV4:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
 				VapeLogoV4Drawing.Size = VapeLogoV4.AbsoluteSize
 				VapeLogo4Drawing.Size = VapeLogoV4.AbsoluteSize
 			end))
-			table.insert(TextGUIConnections, VapeCustomText:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+			table.insert(shared.FlashConnections, VapeCustomText:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
 				VapeCustomDrawingText.Position = VapeCustomText.AbsolutePosition + Vector2.new(VapeText.TextXAlignment == Enum.TextXAlignment.Right and (VapeCustomText.AbsoluteSize.X - VapeCustomDrawingText.TextBounds.X), 32)
 				VapeCustomDrawingShadow.Position = VapeCustomDrawingText.Position + Vector2.new(1, 1)
 			end))
-			table.insert(TextGUIConnections, VapeLogoShadow:GetPropertyChangedSignal("Visible"):Connect(function()
+			table.insert(shared.FlashConnections, VapeLogoShadow:GetPropertyChangedSignal("Visible"):Connect(function()
 				VapeLogoShadowDrawing.Visible = VapeLogoShadow.Visible
 				VapeLogo4Drawing.Visible = VapeLogoShadow.Visible
 			end))
-			table.insert(TextGUIConnections, VapeTextExtra:GetPropertyChangedSignal("Visible"):Connect(function()
+			table.insert(shared.FlashConnections, VapeTextExtra:GetPropertyChangedSignal("Visible"):Connect(function()
 				for i,textdraw in pairs(TextGUIObjects.ShadowLabels) do 
 					textdraw.Visible = VapeTextExtra.Visible
 				end
 				VapeCustomDrawingShadow.Visible = VapeCustomText.Visible and VapeTextExtra.Visible
 			end))
-			table.insert(TextGUIConnections, VapeLogo:GetPropertyChangedSignal("Visible"):Connect(function()
+			table.insert(shared.FlashConnections, VapeLogo:GetPropertyChangedSignal("Visible"):Connect(function()
 				VapeLogoDrawing.Visible = VapeLogo.Visible
 				VapeLogoV4Drawing.Visible = VapeLogo.Visible
 				VapeLogoShadowDrawing.Visible = VapeLogo.Visible and VapeTextExtra.Visible
 				VapeLogo4Drawing.Visible = VapeLogo.Visible and VapeTextExtra.Visible
 			end))
-			table.insert(TextGUIConnections, VapeCustomText:GetPropertyChangedSignal("Visible"):Connect(function()
+			table.insert(shared.FlashConnections, VapeCustomText:GetPropertyChangedSignal("Visible"):Connect(function()
 				VapeCustomDrawingText.Visible = VapeCustomText.Visible
 				VapeCustomDrawingShadow.Visible = VapeCustomText.Visible and VapeTextExtra.Visible
 			end))
-			table.insert(TextGUIConnections, VapeCustomText:GetPropertyChangedSignal("Text"):Connect(function()
+			table.insert(shared.FlashConnections, VapeCustomText:GetPropertyChangedSignal("Text"):Connect(function()
 				VapeCustomDrawingText.Text = VapeCustomText.Text
 				VapeCustomDrawingShadow.Text = VapeCustomText.Text
 				VapeCustomDrawingText.Position = VapeCustomText.AbsolutePosition + Vector2.new(VapeText.TextXAlignment == Enum.TextXAlignment.Right and (VapeCustomText.AbsoluteSize.X - VapeCustomDrawingText.TextBounds.X), 32)
 				VapeCustomDrawingShadow.Position = VapeCustomDrawingText.Position + Vector2.new(1, 1)
 			end))
-			table.insert(TextGUIConnections, VapeCustomText:GetPropertyChangedSignal("TextColor3"):Connect(function()
+			table.insert(shared.FlashConnections, VapeCustomText:GetPropertyChangedSignal("TextColor3"):Connect(function()
 				VapeCustomDrawingText.Color = VapeCustomText.TextColor3
 			end))
-			table.insert(TextGUIConnections, VapeText:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+			table.insert(shared.FlashConnections, VapeText:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
 				for i,textdraw in pairs(TextGUIObjects.Labels) do 
 					textdraw.Position = VapeText.AbsolutePosition + Vector2.new(VapeText.TextXAlignment == Enum.TextXAlignment.Right and (VapeText.AbsoluteSize.X - textdraw.TextBounds.X), ((textdraw.Size - 3) * i) + 6)
 				end
@@ -555,7 +596,7 @@ TextGUIMode = TextGUI.CreateDropdown({
 					textdraw.Position = Vector2.new(1, 1) + (VapeText.AbsolutePosition + Vector2.new(VapeText.TextXAlignment == Enum.TextXAlignment.Right and (VapeText.AbsoluteSize.X - textdraw.TextBounds.X), ((textdraw.Size - 3) * i) + 6))
 				end
 			end))
-			table.insert(TextGUIConnections, VapeLogoGradient:GetPropertyChangedSignal("Color"):Connect(function()
+			table.insert(shared.FlashConnections, VapeLogoGradient:GetPropertyChangedSignal("Color"):Connect(function()
 				pcall(function()
 					VapeLogoDrawing.Color = VapeLogoGradient.Color.Keypoints[1].Value
 				end)
@@ -721,9 +762,9 @@ TargetInfoNameShadow.TextTransparency = 0.5
 TargetInfoNameShadow.TextColor3 = Color3.new()
 TargetInfoNameShadow.ZIndex = 1
 TargetInfoNameShadow.Position = UDim2.new(0, 1, 0, 1)
-TargetInfoName:GetPropertyChangedSignal("Text"):Connect(function()
+table.insert(shared.FlashConnections, TargetInfoName:GetPropertyChangedSignal("Text"):Connect(function()
 	TargetInfoNameShadow.Text = TargetInfoName.Text
-end)
+end))
 TargetInfoNameShadow.Parent = TargetInfoName
 local TargetInfoHealthBackground = Instance.new("Frame")
 TargetInfoHealthBackground.BackgroundColor3 = Color3.fromRGB(54, 54, 54)
@@ -788,9 +829,9 @@ TargetInfoBackground = TargetInfo.CreateToggle({
 	Default = true
 })
 local TargetInfoHealthTween
-TargetInfo.GetCustomChildren().Parent:GetPropertyChangedSignal("Size"):Connect(function()
+table.insert(shared.FlashConnections, TargetInfo.GetCustomChildren().Parent:GetPropertyChangedSignal("Size"):Connect(function()
 	TargetInfoMainInfo.Position = UDim2.fromOffset(0, TargetInfo.GetCustomChildren().Parent.Size ~= UDim2.fromOffset(220, 0) and -5 or 40)
-end)
+end))
 shared.VapeTargetInfo = {
 	UpdateInfo = function(tab, targetsize) 
 		if TargetInfo.GetCustomChildren().Parent then
@@ -840,7 +881,7 @@ ModuleSettings.CreateToggle({
 	Name = "MiddleClick friends", 
 	Function = function(callback) 
 		if callback then
-			MiddleClickInput = game:GetService("UserInputService").InputBegan:Connect(function(input1)
+			MiddleClickInput = table.insert(game:GetService("UserInputService").InputBegan:Connect(function(input1)
 				if input1.UserInputType == Enum.UserInputType.MouseButton3 then
 					local entityLibrary = shared.vapeentity
 					if entityLibrary then 
@@ -967,7 +1008,7 @@ GuiLibrary.UpdateUI = function(h, s, val, bypass)
 		end
 		VapeText.Text = newTextGUIText
 
-		if (not GuiLibrary.MainGui.ScaledGui.ClickGui.Visible) and (not bypass) then return end
+		if (not GuiLibrary.MainUi.ScaledGui.ClickGui.Visible) and (not bypass) then return end
 		local buttonColorIndex = 0
 		for i, v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
 			if v.Type == "TargetFrame" then
@@ -1041,7 +1082,7 @@ GUISettings.CreateToggle({
 	Name = "Blur Background", 
 	Function = function(callback) 
 		GuiLibrary.MainBlur.Size = (callback and 25 or 0) 
-		game:GetService("RunService"):SetRobloxGuiFocused(GuiLibrary.MainGui.ScaledGui.ClickGui.Visible and callback) 
+		game:GetService("RunService"):SetRobloxGuiFocused(GuiLibrary.MainUi.ScaledGui.ClickGui.Visible and callback) 
 	end,
 	Default = true,
 	HoverText = "Blur the background of the GUI"
@@ -1075,11 +1116,11 @@ local GUIRescaleToggle = GUISettings.CreateToggle({
 	Default = true,
 	HoverText = "Rescales the GUI"
 })
-gameCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+table.insert(shared.FlashConnections, gameCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
 	if GUIRescaleToggle.Enabled then
 		GuiLibrary.MainRescale.Scale = math.clamp(gameCamera.ViewportSize.X / 1920, 0.5, 1)
 	end
-end)
+end))
 GUISettings.CreateToggle({
 	Name = "Notifications", 
 	Function = function(callback) 
@@ -1121,7 +1162,7 @@ GUISettings.CreateButton2({
 	end
 })
 GeneralSettings.CreateButton2({
-	Name = "UNINJECT",
+	Name = "SelfDestruct",
 	Function = GuiLibrary.SelfDestruct
 })
 
@@ -1131,12 +1172,3 @@ if gameModule then
 else
 	return loadstring(downloadFromGithub("Universal.lua"))()
 end
-
--- local antiAFK = false
--- antiAFK = true
--- game:GetService("Players").LocalPlayer.Idled:Connect(function()
--- 	if not antiAFK then return end
--- 	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
--- 	task.wait(1)
---     game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
--- end)
