@@ -1,7 +1,11 @@
 repeat task.wait() until game:IsLoaded()
 
--- test if this actualy works or not
-function getAssetGithub(path) -- MainScript.lua or assets/AddItem.png
+local versionFile = "flash/version.txt"
+local updatedVersion = game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/version.txt", true)
+local GameModulesFolder = "flash/GameModules"
+local AssetsFolder = "flash/assets"
+
+function downloadFromGithub(path)
 	local workspacePath = "flash/" .. path
 
     if not isfile(workspacePath) then
@@ -31,7 +35,7 @@ function getAssetGithub(path) -- MainScript.lua or assets/AddItem.png
 			if res ~= "404: Not Found" then
 				writefile(workspacePath, res)
 			else
-				return false
+				assert(false, "There was an error with the downloadFromGithub function. Show this to the developer (" + workspacePath + ")")
 			end
         end
     end
@@ -40,35 +44,46 @@ end
 
 if isfolder("flash") then
 	-- Check if folders exist
-	if not isfolder("flash/GameModules") then makefolder("flash/GameModules") end
-	if not isfolder("flash/assets") then makefolder("flash/assets") end
+	if not isfolder(GameModulesFolder) then makefolder(GameModulesFolder) end
+	if not isfolder(AssetsFolder) then makefolder(AssetsFolder) end
 
-    -- Delete each script to update them
-    for i, v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua"}) do 
-        if isfile(v) then
-            delfile(v)
-        end
-    end
-    if isfolder("flash/GameModules") then
-        for i, v in pairs(listfiles("flash/GameModules")) do
-            if isfile(v) then
-                delfile(v)
-            end
-        end
-    end
+	if (not isfile(versionFile) or readfile(versionFile) < updatedVersion) then
+		for i, filename in pairs({"Universal.lua", "MainScript.lua", "GuiLibrary.lua"}) do 
+			local dirName = "flash/" .. filename
+			if isfile(dirName) then
+				delfile(dirName)
+				writefile(dirName, downloadFromGithub(filename))
+			end
+		end
+
+		if isfolder(GameModulesFolder) then
+			for i, file in pairs(listfiles(GameModulesFolder)) do
+				local filename = string.gsub(file, "flash/GameModules\\", "")
+				delfile(file)
+				downloadFromGithub("GameModules/" + filename)
+			end
+		end
+		writefile(versionFile, updatedVersion)
+	end
 else
     makefolder("flash")
-	makefolder("flash/assets")
-	makefolder("flash/GameModules")
+	writefile("flash/MainScript.lua", downloadFromGithub("MainScript.lua"))
+	writefile("flash/GuiLibrary.lua", downloadFromGithub("GuiLibrary.lua"))
+	writefile("flash/Universal.lua", downloadFromGithub("Universal.lua"))
+	writefile(versionFile, updatedVersion)
+
+	makefolder(AssetsFolder)
+	makefolder(GameModulesFolder)
 end
 
-local GuiLibrary = loadstring(getAssetGithub("GuiLibrary.lua"))()
-print(getAssetGithub("GuiLibrary.lua"))
+local GuiLibrary = loadstring(downloadFromGithub("GuiLibrary.lua"))()
+print(downloadFromGithub("GuiLibrary.lua"))
+print(GuiLibrary)
 shared.GuiLibrary = GuiLibrary
 
 assert(not shared.flashExecuted, "FlashWare is already injected!")
 shared.flashExecuted = true
-shared.getAssetGithub = getAssetGithub
+shared.downloadFromGithub = downloadFromGithub
  
 local GUI = GuiLibrary.CreateMainWindow()
 local Combat = GuiLibrary.CreateWindow({
@@ -1110,11 +1125,11 @@ GeneralSettings.CreateButton2({
 	Function = GuiLibrary.SelfDestruct
 })
 
-local gameModule = getAssetGithub("GameModules/" .. game.GameId)
+local gameModule = downloadFromGithub("GameModules/" .. game.GameId)
 if gameModule then
     return loadstring(gameModule)()
 else
-	return loadstring(getAssetGithub("Universal.lua"))()
+	return loadstring(downloadFromGithub("Universal.lua"))()
 end
 
 -- local antiAFK = false
