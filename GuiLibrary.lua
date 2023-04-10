@@ -42,6 +42,7 @@ if shared.flashExecuted then
 	notificationwindow.Active = false
 	notificationwindow.Size = UDim2.new(1, 0, 1, 0)
 	notificationwindow.Parent = GuiLibrary["MainUi"]
+
 	local hoverbox = Instance.new("TextLabel")
 	hoverbox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 	hoverbox.Active = false
@@ -53,9 +54,11 @@ if shared.flashExecuted then
 	hoverbox.TextSize = 15
 	hoverbox.Visible = false
 	hoverbox.Parent = clickgui
+
 	local hoverround = Instance.new("UICorner")
 	hoverround.CornerRadius = UDim.new(0, 5)
 	hoverround.Parent = hoverbox
+
 	local hoverbox2 = hoverbox:Clone()
 	hoverbox2.ZIndex = -1
 	hoverbox2.Size = UDim2.new(1, 2, 1, 2)
@@ -64,10 +67,11 @@ if shared.flashExecuted then
 	hoverbox2.BackgroundColor3 = Color3.fromRGB(32, 35, 36)
 	hoverbox2.Position = UDim2.new(0, -1, 0, -1)
 	hoverbox2.Parent = hoverbox
+
 	local hoverboxshadow = Instance.new("ImageLabel")
 	hoverboxshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 	hoverboxshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	hoverboxshadow.Image = shared.downloadFromGithub("assets/WindowBlur.png")
+	hoverboxshadow.Image = shared.downloadFromGithub("assets/Blur.png")
 	hoverboxshadow.BackgroundTransparency = 1
 	hoverboxshadow.ZIndex = -1
 	hoverboxshadow.Visible = true
@@ -76,7 +80,9 @@ if shared.flashExecuted then
 	hoverboxshadow.ScaleType = Enum.ScaleType.Slice
 	hoverboxshadow.SliceCenter = Rect.new(10, 10, 118, 118)
 	hoverboxshadow.Parent = hoverbox
+
 	local vertextsize = textService:GetTextSize("v"..Version, 25, Enum.Font.SourceSans, Vector2.new(99999, 99999))
+
 	local vertext = Instance.new("TextLabel")
 	vertext.Name = "Version"
 	vertext.Size = UDim2.new(0, vertextsize.X, 0, 20)
@@ -90,23 +96,27 @@ if shared.flashExecuted then
 	vertext.TextYAlignment = Enum.TextYAlignment.Top
 	vertext.Position = UDim2.new(1, -(vertextsize.X) - 20, 1, -25)
 	vertext.Parent = clickgui
+
 	local vertext2 = vertext:Clone()
 	vertext2.Position = UDim2.new(0, 1, 0, 1)
 	vertext2.TextColor3 = Color3.new(0.42, 0.42, 0.42)
 	vertext2.ZIndex = 0
 	vertext2.Parent = vertext
+
 	local modal = Instance.new("TextButton")
 	modal.Size = UDim2.new(0, 0, 0, 0)
 	modal.BorderSizePixel = 0
 	modal.Text = ""
 	modal.Modal = true
 	modal.Parent = clickgui
+
 	local hudgui = Instance.new("Frame")
 	hudgui.Name = "HudGui"
 	hudgui.Size = UDim2.new(1, 0, 1, 0)
 	hudgui.BackgroundTransparency = 1
 	hudgui.Visible = true
 	hudgui.Parent = scaledgui
+
 	GuiLibrary["MainBlur"] = {Size = 25}
 	GuiLibrary["MainRescale"] = Instance.new("UIScale")
 	GuiLibrary["MainRescale"].Parent = scaledgui
@@ -169,7 +179,7 @@ if shared.flashExecuted then
 		local windowshadow = Instance.new("ImageLabel")
 		windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 		windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-		windowshadow.Image = shared.downloadFromGithub("assets/WindowBlur.png")
+		windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
 		windowshadow.BackgroundTransparency = 1
 		windowshadow.ZIndex = -1
 		windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -277,6 +287,7 @@ if shared.flashExecuted then
 			task.spawn(function()
 				local hover3textsize = textService:GetTextSize("Discord invite set to clipboard", 16, Enum.Font.SourceSans, Vector2.new(99999, 99999))
 				local pos = inputService:GetMouseLocation()
+
 				local hoverbox3 = Instance.new("TextLabel")
 				hoverbox3.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 				hoverbox3.Active = false
@@ -318,6 +329,7 @@ if shared.flashExecuted then
 		settingsexit.MouseLeave:Connect(function()
 			tweenService:Create(settingsexit, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundColor3 = settingsexithovercolor, ImageColor3 = Color3.fromRGB(121, 121, 121)}):Play()
 		end)
+
 		local children = Instance.new("Frame")
 		children.BackgroundTransparency = 1
 		children.Name = "Children"
@@ -332,23 +344,26 @@ if shared.flashExecuted then
 		extraframe.LayoutOrder = 99999
 		extraframe.Name = "Extras"
 		extraframe.Parent = children
-		
+
 		local overlaysicons = Instance.new("Frame")
 		overlaysicons.Size = UDim2.new(0, 145, 0, 18)
 		overlaysicons.Position = UDim2.new(0, 33, 0, 11)
 		overlaysicons.BackgroundTransparency = 1
 		overlaysicons.Parent = extraframe
+
 		local overlaysbkg = Instance.new("Frame")
 		overlaysbkg.BackgroundTransparency = 0.5
 		overlaysbkg.BackgroundColor3 = Color3.new(0, 0, 0)
 		overlaysbkg.BorderSizePixel = 0
 		overlaysbkg.Visible = false
 		overlaysbkg.Parent = windowtitle
+
 		local overlaystitle = Instance.new("Frame")
 		overlaystitle.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 		overlaystitle.Size = UDim2.new(0, 220, 0, 45)
 		overlaystitle.Position = UDim2.new(0, 0, 1, -45)
 		overlaystitle.Parent = overlaysbkg
+
 		local overlaysicon = Instance.new("ImageLabel")
 		overlaysicon.Name = "OverlaysWindowIcon"
 		overlaysicon.Size = UDim2.new(0, 14, 0, 12)
@@ -358,6 +373,7 @@ if shared.flashExecuted then
 		overlaysicon.BackgroundTransparency = 1
 		overlaysicon.Position = UDim2.new(0, 10, 0, 15)
 		overlaysicon.Parent = overlaystitle
+
 		local overlaysexit = Instance.new("ImageButton")
 		overlaysexit.Name = "OverlaysExit"
 		overlaysexit.ImageColor3 = Color3.fromRGB(121, 121, 121)
@@ -367,6 +383,7 @@ if shared.flashExecuted then
 		overlaysexit.Position = UDim2.new(1, -32, 0, 9)
 		overlaysexit.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 		overlaysexit.Parent = overlaystitle
+
 		local overlaysexitround = Instance.new("UICorner")
 		overlaysexitround.CornerRadius = UDim.new(0, 16)
 		overlaysexitround.Parent = overlaysexit
@@ -376,6 +393,7 @@ if shared.flashExecuted then
 		overlaysexit.MouseLeave:Connect(function()
 			tweenService:Create(overlaysexit, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundColor3 = Color3.fromRGB(26, 25, 26), ImageColor3 = Color3.fromRGB(121, 121, 121)}):Play()
 		end)
+
 		local overlaysbutton = Instance.new("ImageButton")
 		overlaysbutton.Size = UDim2.new(0, 12, 0, 10)
 		overlaysbutton.Name = "MainButton"
@@ -384,6 +402,7 @@ if shared.flashExecuted then
 		overlaysbutton.AutoButtonColor = false
 		overlaysbutton.Image = shared.downloadFromGithub("assets/TextGUIIcon2.png")
 		overlaysbutton.Parent = extraframe
+
 		local overlaystext = Instance.new("TextLabel")
 		overlaystext.Size = UDim2.new(0, 155, 0, 39)
 		overlaystext.BackgroundTransparency = 1
@@ -395,6 +414,7 @@ if shared.flashExecuted then
 		overlaystext.Text = "Overlays"
 		overlaystext.TextColor3 = Color3.fromRGB(201, 201, 201)
 		overlaystext.Parent = overlaystitle
+
 		local overlayschildren = Instance.new("Frame")
 		overlayschildren.BackgroundTransparency = 1
 		overlayschildren.Size = UDim2.new(0, 220, 1, -4)
@@ -402,6 +422,7 @@ if shared.flashExecuted then
 		overlayschildren.Position = UDim2.new(0, 0, 0, 41)
 		overlayschildren.Parent = overlaystitle
 		overlayschildren.Visible = true
+
 		local children2 = Instance.new("Frame")
 		children2.BackgroundTransparency = 1
 		children2.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
@@ -411,30 +432,38 @@ if shared.flashExecuted then
 		children2.Position = UDim2.new(0, 0, 0, 41)
 		children2.Parent = windowtitle
 		children2.Visible = false
+
 		local divider3 = Instance.new("Frame")
 		divider3.Size = UDim2.new(1, 0, 0, 1)
 		divider3.Name = "Divider"
 		divider3.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
 		divider3.BorderSizePixel = 0
 		divider3.Parent = children2
+
 		local windowcorner = Instance.new("UICorner")
 		windowcorner.CornerRadius = UDim.new(0, 4)
 		windowcorner.Parent = windowtitle
+
 		local windowcorner2 = Instance.new("UICorner")
 		windowcorner2.CornerRadius = UDim.new(0, 4)
 		windowcorner2.Parent = settingsbox
+
 		local windowcorner3 = Instance.new("UICorner")
 		windowcorner3.CornerRadius = UDim.new(0, 4)
 		windowcorner3.Parent = settingsbox2
+
 		local overlayscorner = Instance.new("UICorner")
 		overlayscorner.CornerRadius = UDim.new(0, 4)
 		overlayscorner.Parent = overlaystitle
+
 		local overlayscorner2 = Instance.new("UICorner")
 		overlayscorner2.CornerRadius = UDim.new(0, 4)
 		overlayscorner2.Parent = overlaysbkg
+
 		local uilistlayout = Instance.new("UIListLayout")
 		uilistlayout.SortOrder = Enum.SortOrder.LayoutOrder
 		uilistlayout.Parent = children
+
 		local uilistlayout2 = Instance.new("UIListLayout")
 		uilistlayout2.SortOrder = Enum.SortOrder.LayoutOrder
 		uilistlayout2.Parent = children2
@@ -447,6 +476,7 @@ if shared.flashExecuted then
 			windowtitle.Size = UDim2.new(0, 220, 0, 45 + uilistlayout.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))
 			overlaysbkg.Size = UDim2.new(0, 220, 0, 45 + uilistlayout.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))
 		end)
+
 		local uilistlayout3 = Instance.new("UIListLayout")
 		uilistlayout3.SortOrder = Enum.SortOrder.LayoutOrder
 		uilistlayout3.Parent = overlayschildren
@@ -454,6 +484,7 @@ if shared.flashExecuted then
 			overlaystitle.Size = UDim2.new(0, 220, 0, 45 + uilistlayout3.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))
 			overlaystitle.Position = UDim2.new(0, 0, 1, -(48 + (uilistlayout3.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))))
 		end)
+
 		local uilistlayout4 = Instance.new("UIListLayout")
 		uilistlayout4.SortOrder = Enum.SortOrder.LayoutOrder
 		uilistlayout4.FillDirection = Enum.FillDirection.Horizontal
@@ -461,6 +492,7 @@ if shared.flashExecuted then
 		uilistlayout4.VerticalAlignment = Enum.VerticalAlignment.Center
 		uilistlayout4.HorizontalAlignment = Enum.HorizontalAlignment.Right
 		uilistlayout4.Parent = overlaysicons
+
 		local windowbackbutton = Instance.new("ImageButton")
 		windowbackbutton.Size = UDim2.new(0, 16, 0, 16)
 		windowbackbutton.Position = UDim2.new(0, 11, 0, 13)
@@ -484,9 +516,12 @@ if shared.flashExecuted then
 		windowbackbutton.MouseLeave:Connect(function()
 			windowbackbutton.ImageTransparency = 0.55
 		end)
+
 		windowbackbutton.Image = shared.downloadFromGithub("assets/BackIcon.png")
 		windowbackbutton.Parent = windowtitle
+
 		dragGUI(windowtitle)
+
 		windowapi["ExpandToggle"] = function() end
 		GuiLibrary.ObjectsThatCanBeSaved["GUIWindow"] = {["Object"] = windowtitle, ["ChildrenObject"] = children, ["Type"] = "Window", ["Api"] = windowapi}
 
@@ -548,6 +583,7 @@ if shared.flashExecuted then
 				divider.Parent = overlayschildren
 			end
 			local amount = #overlayschildren:GetChildren()
+
 			local buttontext = Instance.new("TextLabel")
 			buttontext.BackgroundTransparency = 1
 			buttontext.Name = "ButtonText"
@@ -561,12 +597,14 @@ if shared.flashExecuted then
 			buttontext.Font = Enum.Font.SourceSans
 			buttontext.TextXAlignment = Enum.TextXAlignment.Left
 			buttontext.Parent = overlayschildren
+
 			local buttonicon = Instance.new("ImageLabel")
 			buttonicon.Size = UDim2.new(0, 20, 0, 19)
 			buttonicon.Position = UDim2.new(0, 10, 0, 11)
 			buttonicon.BackgroundTransparency = 1
 			buttonicon.Image = shared.downloadFromGithub(argstable["Icon"])
 			buttonicon.Parent = buttontext
+
 			local toggleframe1 = Instance.new("TextButton")
 			toggleframe1.AutoButtonColor = false
 			toggleframe1.Size = UDim2.new(0, 22, 0, 12)
@@ -576,6 +614,7 @@ if shared.flashExecuted then
 			toggleframe1.Name = "ToggleFrame1"
 			toggleframe1.Position = UDim2.new(1, -32, 0, 14)
 			toggleframe1.Parent = buttontext
+
 			local toggleframe2 = Instance.new("Frame")
 			toggleframe2.Size = UDim2.new(0, 8, 0, 8)
 			toggleframe2.Active = false
@@ -583,12 +622,15 @@ if shared.flashExecuted then
 			toggleframe2.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 			toggleframe2.BorderSizePixel = 0
 			toggleframe2.Parent = toggleframe1
+
 			local uicorner = Instance.new("UICorner")
 			uicorner.CornerRadius = UDim.new(0, 16)
 			uicorner.Parent = toggleframe1
+
 			local uicorner2 = Instance.new("UICorner")
 			uicorner2.CornerRadius = UDim.new(0, 16)
 			uicorner2.Parent = toggleframe2
+
 			local toggleicon = Instance.new("ImageLabel")
 			toggleicon.Size = UDim2.new(0, 16, 0, 16)
 			toggleicon.BackgroundTransparency = 1
@@ -681,15 +723,18 @@ if shared.flashExecuted then
 				children3.Position = UDim2.new(0, 0, 0, 41)
 				children3.Parent = windowtitle
 				children3.Visible = false
+
 				local divider = Instance.new("Frame")
 				divider.Size = UDim2.new(1, 0, 0, 1)
 				divider.Name = "Divider"
 				divider.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
 				divider.BorderSizePixel = 0
 				divider.Parent = children3
+
 				local uilistlayout3 = Instance.new("UIListLayout")
 				uilistlayout3.SortOrder = Enum.SortOrder.LayoutOrder
 				uilistlayout3.Parent = children3
+
 				local button = Instance.new("TextButton")
 				button.Name = text.."Button"
 				button.AutoButtonColor = false
@@ -699,6 +744,7 @@ if shared.flashExecuted then
 				button.Text = ""
 				button.LayoutOrder = amount
 				button.Parent = children2
+
 				local buttontext = Instance.new("TextLabel")
 				buttontext.BackgroundTransparency = 1
 				buttontext.Name = "ButtonText"
@@ -711,6 +757,7 @@ if shared.flashExecuted then
 				buttontext.TextXAlignment = Enum.TextXAlignment.Left
 				buttontext.Position = UDim2.new(0, 10, 0, 0)
 				buttontext.Parent = button
+
 				local arrow = Instance.new("ImageLabel")
 				arrow.Size = UDim2.new(0, 4, 0, 8)
 				arrow.BackgroundTransparency = 1
@@ -719,6 +766,7 @@ if shared.flashExecuted then
 				arrow.Image = shared.downloadFromGithub("assets/RightArrow.png")
 				arrow.Active = false
 				arrow.Parent = button
+
 				local windowbackbutton2 = Instance.new("ImageButton")
 				windowbackbutton2.Size = UDim2.new(0, 16, 0, 16)
 				windowbackbutton2.Position = UDim2.new(0, 11, 0, 13)
@@ -744,6 +792,7 @@ if shared.flashExecuted then
 				end)
 				windowbackbutton2.Image = shared.downloadFromGithub("assets/BackIcon.png")
 				windowbackbutton2.Parent = windowtitle
+
 				button.MouseEnter:Connect(function() 
 					tweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundColor3 = Color3.fromRGB(31, 30, 31)}):Play()
 					buttontext.TextColor3 = Color3.fromRGB(207, 207, 207)
@@ -772,6 +821,7 @@ if shared.flashExecuted then
 					local buttonapi = {}
 					local currentanim
 					local amount = #children3:GetChildren()
+
 					local buttontext = Instance.new("TextButton")
 					buttontext.AutoButtonColor = false
 					buttontext.BackgroundTransparency = 1
@@ -787,6 +837,7 @@ if shared.flashExecuted then
 					buttontext.TextXAlignment = Enum.TextXAlignment.Left
 					buttontext.Position = UDim2.new(0, (icon and 36 or 10), 0, 0)
 					buttontext.Parent = children3
+
 					local buttonarrow = Instance.new("ImageLabel")
 					buttonarrow.Size = UDim2.new(1, 0, 0, 4)
 					buttonarrow.Position = UDim2.new(0, 0, 1, -4)
@@ -795,6 +846,7 @@ if shared.flashExecuted then
 					buttonarrow.Image = shared.downloadFromGithub("assets/ToggleArrow.png")
 					buttonarrow.Visible = false
 					buttonarrow.Parent = buttontext
+
 					local toggleframe1 = Instance.new("Frame")
 					toggleframe1.Size = UDim2.new(0, 22, 0, 12)
 					toggleframe1.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
@@ -802,6 +854,7 @@ if shared.flashExecuted then
 					toggleframe1.Name = "ToggleFrame1"
 					toggleframe1.Position = UDim2.new(1, -32, 0, 10)
 					toggleframe1.Parent = buttontext
+
 					local toggleframe2 = Instance.new("Frame")
 					toggleframe2.Size = UDim2.new(0, 8, 0, 8)
 					toggleframe2.Active = false
@@ -809,9 +862,11 @@ if shared.flashExecuted then
 					toggleframe2.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 					toggleframe2.BorderSizePixel = 0
 					toggleframe2.Parent = toggleframe1
+
 					local uicorner = Instance.new("UICorner")
 					uicorner.CornerRadius = UDim.new(0, 16)
 					uicorner.Parent = toggleframe1
+
 					local uicorner2 = Instance.new("UICorner")
 					uicorner2.CornerRadius = UDim.new(0, 16)
 					uicorner2.Parent = toggleframe2
@@ -872,7 +927,6 @@ if shared.flashExecuted then
 				end
 
 				windowapi3["CreateSlider"] = function(argstable)
-				
 					local sliderapi = {}
 					local amount2 = #children3:GetChildren()
 					local frame = Instance.new("Frame")
@@ -882,6 +936,7 @@ if shared.flashExecuted then
 					frame.LayoutOrder = amount2
 					frame.Name = argstable["Name"]
 					frame.Parent = children3
+
 					local text1 = Instance.new("TextLabel")
 					text1.Font = Enum.Font.SourceSans
 					text1.TextXAlignment = Enum.TextXAlignment.Left
@@ -891,6 +946,7 @@ if shared.flashExecuted then
 					text1.BackgroundTransparency = 1
 					text1.TextSize = 17
 					text1.Parent = frame
+
 					local text2 = Instance.new("TextButton")
 					text2.Font = Enum.Font.SourceSans
 					text2.AutoButtonColor = false
@@ -902,6 +958,7 @@ if shared.flashExecuted then
 					text2.BackgroundTransparency = 1
 					text2.TextSize = 17
 					text2.Parent = frame
+
 					local text3 = Instance.new("TextBox")
 					text3.Visible = false
 					text3.Font = Enum.Font.SourceSans
@@ -913,6 +970,7 @@ if shared.flashExecuted then
 					text3.Size = UDim2.new(0, 40, 0, 25)
 					text3.TextSize = 17
 					text3.Parent = frame
+
 					local textdown = Instance.new("Frame")
 					textdown.BackgroundColor3 = Color3.fromRGB(37, 36, 37)
 					textdown.Size = UDim2.new(0, 30, 0, 2)
@@ -920,12 +978,14 @@ if shared.flashExecuted then
 					textdown.Visible = false
 					textdown.BorderSizePixel = 0
 					textdown.Parent = text2
+
 					local textdown2 = Instance.new("Frame")
 					textdown2.BackgroundColor3 = Color3.fromRGB(41, 41, 41)
 					textdown2.Size = UDim2.new(0, 30, 0, 2)
 					textdown2.Position = UDim2.new(1, -38, 1, -4)
 					textdown2.BorderSizePixel = 0
 					textdown2.Parent = text3
+
 					local slider1 = Instance.new("Frame")
 					slider1.Size = UDim2.new(0, 200, 0, 2)
 					slider1.BorderSizePixel = 0
@@ -933,12 +993,14 @@ if shared.flashExecuted then
 					slider1.Position = UDim2.new(0, 10, 0, 32)
 					slider1.Name = "Slider"
 					slider1.Parent = frame
+
 					local slider2 = Instance.new("Frame")
 					slider2.BorderSizePixel = 0
 					slider2.Size = UDim2.new(math.clamp(((argstable["Default"] or argstable["Min"]) / argstable["Max"]), 0.02, 0.97), 0, 1, 0)
 					slider2.BackgroundColor3 = Color3.fromHSV(GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Hue"], GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Sat"], GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Value"])
 					slider2.Name = "FillSlider"
 					slider2.Parent = slider1
+
 					local slider3 = Instance.new("ImageButton")
 					slider3.AutoButtonColor = false
 					slider3.Size = UDim2.new(0, 24, 0, 16)
@@ -960,6 +1022,7 @@ if shared.flashExecuted then
 						text2.Text = sliderapi["Value"] .. ".0 "..(argstable["Percent"] and "%" or " ").." "
 						argstable["Function"](val)
 					end
+
 					slider3.MouseButton1Down:Connect(function()
 						local x,y,xscale,yscale,xscale2 = RelativeXY(slider1, inputService:GetMouseLocation())
 						sliderapi["SetValue"](math.floor(argstable["Min"] + ((argstable["Max"] - argstable["Min"]) * xscale)))
@@ -1027,6 +1090,7 @@ if shared.flashExecuted then
 					local buttonapi = {}
 					local currentanim
 					local amount = #children3:GetChildren()
+
 					local buttontext = Instance.new("Frame")
 					buttontext.BackgroundTransparency = 1
 					buttontext.Name = "ButtonText"
@@ -1036,12 +1100,14 @@ if shared.flashExecuted then
 					buttontext.Active = false
 					buttontext.Position = UDim2.new(0, (icon and 36 or 10), 0, 0)
 					buttontext.Parent = children3
+
 					local toggleframe2 = Instance.new("Frame")
 					toggleframe2.Size = UDim2.new(0, 199, 0, 26)
 					toggleframe2.Position = UDim2.new(0, 11, 0, 1)
 					toggleframe2.BackgroundColor3 = Color3.fromRGB(38, 37, 38)
 					toggleframe2.Name = "ToggleFrame2"
 					toggleframe2.Parent = buttontext
+
 					local toggleframe1 = Instance.new("TextButton")
 					toggleframe1.AutoButtonColor = false
 					toggleframe1.Size = UDim2.new(0, 195, 0, 22)
@@ -1054,9 +1120,11 @@ if shared.flashExecuted then
 					toggleframe1.Name = "ToggleFrame1"
 					toggleframe1.Position = UDim2.new(0, 2, 0, 2)
 					toggleframe1.Parent = toggleframe2
+
 					local uicorner = Instance.new("UICorner")
 					uicorner.CornerRadius = UDim.new(0, 3)
 					uicorner.Parent = toggleframe1
+
 					local uicorner2 = Instance.new("UICorner")
 					uicorner2.CornerRadius = UDim.new(0, 3)
 					uicorner2.Parent = toggleframe2
@@ -1614,7 +1682,7 @@ if shared.flashExecuted then
 		local windowshadow = Instance.new("ImageLabel")
 		windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 		windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-		windowshadow.Image = shared.downloadFromGithub("assets/WindowBlur.png")
+		windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
 		windowshadow.BackgroundTransparency = 1
 		windowshadow.ZIndex = -1
 		windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -2015,7 +2083,7 @@ if shared.flashExecuted then
 			local windowshadow = Instance.new("ImageLabel")
 			windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 			windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-			windowshadow.Image = shared.downloadFromGithub("assets/WindowBlur.png")
+			windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
 			windowshadow.BackgroundTransparency = 1
 			windowshadow.ZIndex = -1
 			windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -2833,7 +2901,7 @@ if shared.flashExecuted then
 		local windowshadow = Instance.new("ImageLabel")
 		windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 		windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-		windowshadow.Image = shared.downloadFromGithub("assets/WindowBlur.png")
+		windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
 		windowshadow.BackgroundTransparency = 1
 		windowshadow.ZIndex = -1
 		windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -3427,7 +3495,7 @@ if shared.flashExecuted then
 				local windowshadow = Instance.new("ImageLabel")
 				windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 				windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-				windowshadow.Image = shared.downloadFromGithub("assets/WindowBlur.png")
+				windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
 				windowshadow.BackgroundTransparency = 1
 				windowshadow.ZIndex = -1
 				windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -3814,7 +3882,7 @@ if shared.flashExecuted then
 				local windowshadow = Instance.new("ImageLabel")
 				windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 				windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-				windowshadow.Image = shared.downloadFromGithub("assets/WindowBlur.png")
+				windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
 				windowshadow.BackgroundTransparency = 1
 				windowshadow.ZIndex = -1
 				windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -5082,7 +5150,7 @@ if shared.flashExecuted then
 		local windowshadow = Instance.new("ImageLabel")
 		windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 		windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-		windowshadow.Image = shared.downloadFromGithub("assets/WindowBlur.png")
+		windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
 		windowshadow.BackgroundTransparency = 1
 		windowshadow.ZIndex = -1
 		windowshadow.Size = UDim2.new(1, 6, 1, 6)
