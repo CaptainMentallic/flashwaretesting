@@ -4,6 +4,7 @@ local versionFile = "flash/version.txt"
 local updatedVersion = game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/version.txt", true)
 local GameModulesFolder = "flash/GameModules"
 local AssetsFolder = "flash/assets"
+local LibrariesFolder = "flash/Libraries"
 
 shared.FlashConnections = {}
 
@@ -36,8 +37,8 @@ function downloadFromGithub(path)
 			if result ~= "404: Not Found" then
 				writefile(workspacePath, result)
 			else
-				return false
 				-- assert(false, "There was an error with the downloadFromGithub function. Show this to the developer (" + workspacePath + ")")
+				return false
 			end
         end
     end
@@ -48,6 +49,7 @@ if isfolder("flash") then
 	-- Check if folders exist
 	if not isfolder(GameModulesFolder) then makefolder(GameModulesFolder) end
 	if not isfolder(AssetsFolder) then makefolder(AssetsFolder) end
+	if not isfolder(LibrariesFolder) then makefolder(AssetsFolder) end
 
 	if (not isfile(versionFile) or readfile(versionFile) < updatedVersion) then
 		for i, filename in pairs({"Universal.lua", "MainScript.lua", "GuiLibrary.lua"}) do 
@@ -65,6 +67,14 @@ if isfolder("flash") then
 				downloadFromGithub("GameModules/" + filename)
 			end
 		end
+
+		if isfolder(LibrariesFolder) then
+			for i, file in pairs(listfiles(LibrariesFolder)) do
+				local filename = string.gsub(file, "flash/Libraries\\", "")
+				delfile(file)
+				downloadFromGithub("Libraries/" + filename)
+			end
+		end
 		writefile(versionFile, updatedVersion)
 	end
 else
@@ -76,12 +86,10 @@ else
 
 	makefolder(AssetsFolder)
 	makefolder(GameModulesFolder)
+	makefolder(LibrariesFolder)
 end
 
 -- test everything below this comment everything above works and already has been tested
-
-debug.getupvalue()
-debug.setconstant()
 
 assert(not shared.flashExecuted, "FlashWare is already injected!")
 shared.flashExecuted = true
@@ -913,7 +921,7 @@ ModuleSettings.CreateToggle({
 						end
 					end
 				end
-			end)
+			end))
 		else
 			if MiddleClickInput then MiddleClickInput:Disconnect() end
 		end
