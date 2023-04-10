@@ -314,7 +314,7 @@ if shared.flashExecuted then
 		settingsexit.ImageColor3 = Color3.fromRGB(121, 121, 121)
 		settingsexit.Size = UDim2.new(0, 24, 0, 24)
 		settingsexit.AutoButtonColor = false
-		settingsexit.Image = shared.downloadFromGithub("assets/ExitIcon1.png")
+		settingsexit.Image = shared.downloadFromGithub("assets/ExitIcon.png")
 		settingsexit.Visible = false
 		settingsexit.Position = UDim2.new(1, -31, 0, 8)
 		settingsexit.BackgroundColor3 = settingsexithovercolor
@@ -379,7 +379,7 @@ if shared.flashExecuted then
 		overlaysexit.ImageColor3 = Color3.fromRGB(121, 121, 121)
 		overlaysexit.Size = UDim2.new(0, 24, 0, 24)
 		overlaysexit.AutoButtonColor = false
-		overlaysexit.Image = shared.downloadFromGithub("assets/ExitIcon1.png")
+		overlaysexit.Image = shared.downloadFromGithub("assets/ExitIcon.png")
 		overlaysexit.Position = UDim2.new(1, -32, 0, 9)
 		overlaysexit.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 		overlaysexit.Parent = overlaystitle
