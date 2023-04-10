@@ -1,48 +1,200 @@
--- Add saving/loading data later
-if shared.flashExecuted then
+if shared.FlashExecuted then
+	local VERSION = readfile("flash/version.txt")
+	local baseDirectory = "flash/"
+	local universalRainbowValue = 0
+	local getcustomasset = getsynasset or getcustomasset or function(location) return "rbxasset://"..location end
+	local requestfunc = syn and syn.request or http and http.request or http_request or fluxus and fluxus.request or request or function() end 
+	local isfile = isfile or function(file)
+		local suc, res = pcall(function() return readfile(file) end)
+		return suc and res ~= nil
+	end
+	local loadedsuccessfully = false
 	local GuiLibrary = {
-		openUIBind = "RightShift",
-		Notifications = true,
-		ToggleNotifications = true
-        -- SavedObjects
+		Settings = {},
+		Profiles = {
+			default = {Keybind = "", Selected = true}
+		},
+		RainbowSpeed = 0.6,
+		GUIKeybind = "RightShift",
+		CurrentProfile = "default",
+		KeybindCaptured = false,
+		PressedKeybindKey = "",
+		ToggleNotifications = false,
+		Notifications = false,
+		ToggleTooltips = false,
+		ObjectsThatCanBeSaved = {["Gui ColorSliderColor"] = {Api = {Hue = 0.44, Sat = 1, Value = 1}}},
 	}
-	
-	local loadedProperly = false
-	local Version = readfile("flash/Version.txt")
-
 	local inputService = game:GetService("UserInputService")
 	local httpService = game:GetService("HttpService")
 	local tweenService = game:GetService("TweenService")
 	local guiService = game:GetService("GuiService")
 	local textService = game:GetService("TextService")
 
-    local function randomString(length)
-        local text = ""
-        for i = 1,typeof(length) == "number" and math.clamp(length, 1, 100) or math.random(10, 100) do
-            text = text..string.char(math.random(1, 128))
-        end
-        return text
-    end
+	local translations = shared.VapeTranslation or {}
+	local translatedlogo = false
+
+	coroutine.resume(coroutine.create(function()
+		repeat
+			task.wait(0.01)
+			universalRainbowValue = universalRainbowValue + 0.005 * GuiLibrary["RainbowSpeed"]
+			if universalRainbowValue > 1 then
+				universalRainbowValue = universalRainbowValue - 1
+			end
+		until not shared.FlashExecuted
+	end))
+
+	local capturedslider = nil
+	local clickgui = {["Visible"] = true}
+
+	local function randomString()
+		local randomlength = math.random(10,100)
+		local array = {}
+
+		for i = 1, randomlength do
+			array[i] = string.char(math.random(32, 126))
+		end
+
+		return table.concat(array)
+	end
+
+	local function RelativeXY(GuiObject, location)
+		local x, y = location.X - GuiObject.AbsolutePosition.X, location.Y - GuiObject.AbsolutePosition.Y
+		local x2 = 0
+		local xm, ym = GuiObject.AbsoluteSize.X, GuiObject.AbsoluteSize.Y
+		x2 = math.clamp(x, 4, xm - 6)
+		x = math.clamp(x, 0, xm)
+		y = math.clamp(y, 0, ym)
+		return x, y, x/xm, y/ym, x2/xm
+	end
 
 	local gui = Instance.new("ScreenGui")
-    gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-    gui.DisplayOrder = 999
-    gui.OnTopOfCoreBlur = true
-	gui.Name = randomString(math.random(20, 150))
-	
-	if gethui then gui.Parent = gethui() elseif syn and syn.protect_gui then syn.protect_gui(gui) gui.Parent = game:GetService("CoreGui") else gui.Parent = game:GetService("CoreGui") end
+	gui.Name = randomString()
+	gui.DisplayOrder = 999
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+	gui.OnTopOfCoreBlur = true
+	if gethui and (not KRNL_LOADED) then
+		gui.Parent = gethui()
+	elseif not is_sirhurt_closure and syn and syn.protect_gui then
+		syn.protect_gui(gui)
+		gui.Parent = game:GetService("CoreGui")
+	else
+		gui.Parent = game:GetService("CoreGui")
+	end
+	GuiLibrary["MainGui"] = gui
 
-	GuiLibrary["MainUi"] = gui
+	local vapeCachedAssets = {}
+	local function vapeGithubRequest(scripturl)
+		if not isfile("flash/"..scripturl) then
+			local suc, res = pcall(function() return game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/"..readfile("flash/commithash.txt").."/"..scripturl, true) end)
+			assert(suc, res)
+			assert(res ~= "404: Not Found", res)
+			if scripturl:find(".lua") then res = "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.\n"..res end
+			writefile("flash/"..scripturl, res)
+		end
+		return readfile("flash/"..scripturl)
+	end
+	
+	local function downloadVapeAsset(path)
+		if not isfile(path) then
+			task.spawn(function()
+				local textlabel = Instance.new("TextLabel")
+				textlabel.Size = UDim2.new(1, 0, 0, 36)
+				textlabel.Text = "Downloading "..path
+				textlabel.BackgroundTransparency = 1
+				textlabel.TextStrokeTransparency = 0
+				textlabel.TextSize = 30
+				textlabel.Font = Enum.Font.SourceSans
+				textlabel.TextColor3 = Color3.new(1, 1, 1)
+				textlabel.Position = UDim2.new(0, 0, 0, -36)
+				textlabel.Parent = GuiLibrary.MainGui
+				repeat task.wait() until isfile(path)
+				textlabel:Destroy()
+			end)
+			local suc, req = pcall(function() return vapeGithubRequest(path:gsub("flash/assets", "assets")) end)
+			if suc and req then
+				writefile(path, req)
+			else
+				return ""
+			end
+		end
+		if not vapeCachedAssets[path] then vapeCachedAssets[path] = getcustomasset(path) end
+		return vapeCachedAssets[path] 
+	end
 
 	GuiLibrary["UpdateHudEvent"] = Instance.new("BindableEvent")
-	GuiLibrary["DestroyUIEvent"] = Instance.new("BindableEvent")
+	GuiLibrary["SelfDestructEvent"] = Instance.new("BindableEvent")
+	GuiLibrary["LoadSettingsEvent"] = Instance.new("BindableEvent")
 
+	local scaledgui = Instance.new("Frame")
+	scaledgui.Name = "ScaledGui"
+	scaledgui.Size = UDim2.new(1, 0, 1, 0)
+	scaledgui.BackgroundTransparency = 1
+	scaledgui.Parent = GuiLibrary["MainGui"]
+	local clickgui = Instance.new("Frame")
+	clickgui.Name = "ClickGui"
+	clickgui.Size = UDim2.new(1, 0, 1, 0)
+	clickgui.BackgroundTransparency = 1
+	clickgui.BorderSizePixel = 0
+	clickgui.BackgroundColor3 = Color3.fromRGB(79, 83, 166)
+	clickgui.Visible = false
+	clickgui.Parent = scaledgui
+	local searchbarmain = Instance.new("Frame")
+	searchbarmain.Size = UDim2.new(0, 220, 0, 37)
+	searchbarmain.Position = UDim2.new(0.5, -110, 0, -23)
+	searchbarmain.ClipsDescendants = false
+	searchbarmain.ZIndex = 10
+	searchbarmain.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	searchbarmain.Parent = clickgui
+	local searchbarchildren = Instance.new("Frame")
+	searchbarchildren.Size = UDim2.new(1, 0, 1, -37)
+	searchbarchildren.Position = UDim2.new(0, 0, 0, 37)
+	searchbarchildren.BackgroundTransparency = 1
+	searchbarchildren.ZIndex = 10
+	searchbarchildren.Parent = searchbarmain
+	local searchbaricon = Instance.new("ImageLabel")
+	searchbaricon.BackgroundTransparency = 1
+	searchbaricon.ZIndex = 10
+	searchbaricon.Image = downloadVapeAsset("flash/assets/SearchBarIcon.png")
+	searchbaricon.Size = UDim2.new(0, 14, 0, 14)
+	searchbaricon.Position = UDim2.new(1, -32, 0, 10)
+	searchbaricon.Parent = searchbarmain
+	local searchbar = Instance.new("TextBox")
+	searchbar.PlaceholderText = ""
+	searchbar.Text = ""
+	searchbar.ZIndex = 10
+	searchbar.TextColor3 = Color3.fromRGB(121, 121, 121)
+	searchbar.Size = UDim2.new(1, -13, 0, 37)
+	searchbar.Font = Enum.Font.Gotham
+	searchbar.TextXAlignment = Enum.TextXAlignment.Left
+	searchbar.TextSize = 15
+	searchbar.Position = UDim2.new(0, 13, 0, 0)
+	searchbar.BackgroundTransparency = 1
+	searchbar.Parent = searchbarmain
+	local searchbarshadow = Instance.new("ImageLabel")
+	searchbarshadow.AnchorPoint = Vector2.new(0.5, 0.5)
+	searchbarshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	searchbarshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
+	searchbarshadow.BackgroundTransparency = 1
+	searchbarshadow.ZIndex = -1
+	searchbarshadow.Size = UDim2.new(1, 6, 1, 6)
+	searchbarshadow.ImageColor3 = Color3.new(0, 0, 0)
+	searchbarshadow.ScaleType = Enum.ScaleType.Slice
+	searchbarshadow.SliceCenter = Rect.new(10, 10, 118, 118)
+	searchbarshadow.Parent = searchbarmain
+	local searchbarround = Instance.new("UICorner")
+	searchbarround.CornerRadius = UDim.new(0, 5)
+	searchbarround.Parent = searchbarmain
+	local OnlineProfilesBigFrame = Instance.new("Frame")
+	OnlineProfilesBigFrame.Size = UDim2.new(1, 0, 1, 0)
+	OnlineProfilesBigFrame.Name = "OnlineProfiles"
+	OnlineProfilesBigFrame.BackgroundTransparency = 1
+	OnlineProfilesBigFrame.Visible = false
+	OnlineProfilesBigFrame.Parent = scaledgui
 	local notificationwindow = Instance.new("Frame")
 	notificationwindow.BackgroundTransparency = 1
 	notificationwindow.Active = false
 	notificationwindow.Size = UDim2.new(1, 0, 1, 0)
-	notificationwindow.Parent = GuiLibrary["MainUi"]
-
+	notificationwindow.Parent = GuiLibrary["MainGui"]
 	local hoverbox = Instance.new("TextLabel")
 	hoverbox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 	hoverbox.Active = false
@@ -54,11 +206,9 @@ if shared.flashExecuted then
 	hoverbox.TextSize = 15
 	hoverbox.Visible = false
 	hoverbox.Parent = clickgui
-
 	local hoverround = Instance.new("UICorner")
 	hoverround.CornerRadius = UDim.new(0, 5)
 	hoverround.Parent = hoverbox
-
 	local hoverbox2 = hoverbox:Clone()
 	hoverbox2.ZIndex = -1
 	hoverbox2.Size = UDim2.new(1, 2, 1, 2)
@@ -67,11 +217,10 @@ if shared.flashExecuted then
 	hoverbox2.BackgroundColor3 = Color3.fromRGB(32, 35, 36)
 	hoverbox2.Position = UDim2.new(0, -1, 0, -1)
 	hoverbox2.Parent = hoverbox
-
 	local hoverboxshadow = Instance.new("ImageLabel")
 	hoverboxshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 	hoverboxshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	hoverboxshadow.Image = shared.downloadFromGithub("assets/Blur.png")
+	hoverboxshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
 	hoverboxshadow.BackgroundTransparency = 1
 	hoverboxshadow.ZIndex = -1
 	hoverboxshadow.Visible = true
@@ -80,9 +229,7 @@ if shared.flashExecuted then
 	hoverboxshadow.ScaleType = Enum.ScaleType.Slice
 	hoverboxshadow.SliceCenter = Rect.new(10, 10, 118, 118)
 	hoverboxshadow.Parent = hoverbox
-
-	local vertextsize = textService:GetTextSize("v"..Version, 25, Enum.Font.SourceSans, Vector2.new(99999, 99999))
-
+	local vertextsize = textService:GetTextSize("v"..VERSION, 25, Enum.Font.SourceSans, Vector2.new(99999, 99999))
 	local vertext = Instance.new("TextLabel")
 	vertext.Name = "Version"
 	vertext.Size = UDim2.new(0, vertextsize.X, 0, 20)
@@ -91,32 +238,28 @@ if shared.flashExecuted then
 	vertext.Active = false
 	vertext.TextSize = 25
 	vertext.BackgroundTransparency = 1
-	vertext.Text = "v"..Version
+	vertext.Text = "v"..VERSION
 	vertext.TextXAlignment = Enum.TextXAlignment.Left
 	vertext.TextYAlignment = Enum.TextYAlignment.Top
 	vertext.Position = UDim2.new(1, -(vertextsize.X) - 20, 1, -25)
 	vertext.Parent = clickgui
-
 	local vertext2 = vertext:Clone()
 	vertext2.Position = UDim2.new(0, 1, 0, 1)
 	vertext2.TextColor3 = Color3.new(0.42, 0.42, 0.42)
 	vertext2.ZIndex = 0
 	vertext2.Parent = vertext
-
 	local modal = Instance.new("TextButton")
 	modal.Size = UDim2.new(0, 0, 0, 0)
 	modal.BorderSizePixel = 0
 	modal.Text = ""
 	modal.Modal = true
 	modal.Parent = clickgui
-
 	local hudgui = Instance.new("Frame")
 	hudgui.Name = "HudGui"
 	hudgui.Size = UDim2.new(1, 0, 1, 0)
 	hudgui.BackgroundTransparency = 1
 	hudgui.Visible = true
 	hudgui.Parent = scaledgui
-
 	GuiLibrary["MainBlur"] = {Size = 25}
 	GuiLibrary["MainRescale"] = Instance.new("UIScale")
 	GuiLibrary["MainRescale"].Parent = scaledgui
@@ -127,59 +270,357 @@ if shared.flashExecuted then
 	local function dragGUI(gui)
 		task.spawn(function()
 			local dragging
-            local dragInput
-            local dragStart
-            local startPos
-
-            local function update(input)
-                local delta = input.Position - dragStart
-                gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-
-            gui.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = true
-                    dragStart = input.Position
-                    startPos = gui.Position
-
-                    input.Changed:Connect(function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            dragging = false
-                        end
-                    end)
-                end
-            end)
-
-            gui.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                    dragInput = input
-                end
-            end)
-
-            gui.InputEnded:Connect(function(input)
-                if input == dragInput and dragging then
-                    update(input)
-                    dragging = false
-                end
-            end)
+			local dragInput
+			local dragStart = Vector3.new(0,0,0)
+			local startPos
+			local function update(input)
+				local delta = input.Position - dragStart
+				local Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + (delta.X * (1 / GuiLibrary["MainRescale"].Scale)), startPos.Y.Scale, startPos.Y.Offset + (delta.Y * (1 / GuiLibrary["MainRescale"].Scale)))
+				tweenService:Create(gui, TweenInfo.new(.20), {Position = Position}):Play()
+			end
+			gui.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and dragging == false then
+						dragStart = input.Position
+						local delta = (dragStart - Vector3.new(gui.AbsolutePosition.X, gui.AbsolutePosition.Y, 0)) * (1 / GuiLibrary["MainRescale"].Scale)
+						if delta.Y <= 40 then
+							dragging = clickgui.Visible
+							startPos = gui.Position
+							
+							input.Changed:Connect(function()
+								if input.UserInputState == Enum.UserInputState.End then
+									dragging = false
+								end
+							end)
+						end
+					end
+			end)
+			gui.InputChanged:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+					dragInput = input
+				end
+			end)
+			inputService.InputChanged:Connect(function(input)
+				if input == dragInput and dragging then
+					update(input)
+				end
+			end)
 		end)
+	end
+
+	GuiLibrary.SaveSettings = function()
+		if loadedsuccessfully then
+			writefile(baseDirectory.."Profiles/"..(shared.CustomSaveVape or game.PlaceId)..".vapeprofiles.txt", httpService:JSONEncode(GuiLibrary.Profiles))
+			local WindowTable = {}
+			for i,v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
+				if v.Type == "Window" then
+					WindowTable[i] = {["Type"] = "Window", ["Visible"] = v.Object.Visible, ["Expanded"] = v["ChildrenObject"].Visible, ["Position"] = {v.Object.Position.X.Scale, v.Object.Position.X.Offset, v.Object.Position.Y.Scale, v.Object.Position.Y.Offset}}
+				end
+				if v.Type == "CustomWindow" then
+					if v["Api"]["Bypass"] then
+						GuiLibrary.Settings[i] = {["Type"] = "CustomWindow", ["Visible"] = v.Object.Visible, ["Pinned"] = v["Api"]["Pinned"], ["Position"] = {v.Object.Position.X.Scale, v.Object.Position.X.Offset, v.Object.Position.Y.Scale, v.Object.Position.Y.Offset}}
+					else
+						WindowTable[i] = {["Type"] = "CustomWindow", ["Visible"] = v.Object.Visible, ["Pinned"] = v["Api"]["Pinned"], ["Position"] = {v.Object.Position.X.Scale, v.Object.Position.X.Offset, v.Object.Position.Y.Scale, v.Object.Position.Y.Offset}}
+					end
+				end
+				if (v.Type == "ButtonMain" or v.Type == "ToggleMain") then
+					WindowTable[i] = {["Type"] = "ButtonMain", ["Enabled"] = v["Api"]["Enabled"], ["Keybind"] = v["Api"]["Keybind"]}
+				end
+				if v.Type == "ColorSliderMain" then
+					WindowTable[i] = {["Type"] = "ColorSliderMain", ["Hue"] = v["Api"]["Hue"], ["Sat"] = v["Api"]["Sat"], ["Value"] = v["Api"]["Value"], ["RainbowValue"] = v["Api"]["RainbowValue"]}
+				end
+				if v.Type == "ColorSliderGUI" then
+					WindowTable[i] = {["Type"] = "ColorSliderGUI", ["Hue"] = v["Api"]["Saved"], ["RainbowValue"] = v["Api"]["RainbowValue"]}
+				end
+				if v.Type == "SliderMain" then
+					WindowTable[i] = {["Type"] = "SliderMain", ["Value"] = v["Api"]["Value"]}
+				end
+				if v.Type == "DropdownMain" then
+					WindowTable[i] = {["Type"] = "DropdownMain", ["Value"] = v["Api"]["Value"]}
+				end
+				if v.Type == "TextBoxMain" then
+					WindowTable[i] = {["Type"] = "TextBoxMain", ["Value"] = v["Api"]["Value"]}
+				end
+				if (v.Type == "Button" or v.Type == "Toggle" or v.Type == "ExtrasButton" or v.Type == "TargetButton") then
+					GuiLibrary.Settings[i] = {["Type"] = "Button", ["Enabled"] = v["Api"]["Enabled"], ["Keybind"] = v["Api"]["Keybind"]}
+				end
+				if (v.Type == "OptionsButton" or v.Type == "ExtrasButton") then
+					GuiLibrary.Settings[i] = {["Type"] = "OptionsButton", ["Enabled"] = v["Api"]["Enabled"], ["Keybind"] = v["Api"]["Keybind"]}
+				end
+				if v.Type == "TextList" then
+					GuiLibrary.Settings[i] = {["Type"] = "TextList", ["ObjectTable"] = v["Api"]["ObjectList"]}
+				end
+				if v.Type == "TextCircleList" then
+					GuiLibrary.Settings[i] = {["Type"] = "TextCircleList", ["ObjectTable"] = v["Api"]["ObjectList"], ["ObjectTableEnabled"] = v["Api"]["ObjectListEnabled"]}
+				end
+				if v.Type == "TextBox" then
+					GuiLibrary.Settings[i] = {["Type"] = "TextBox", ["Value"] = v["Api"]["Value"]}
+				end
+				if v.Type == "Dropdown" then
+					GuiLibrary.Settings[i] = {["Type"] = "Dropdown", ["Value"] = v["Api"]["Value"]}
+				end
+				if v.Type == "Slider" then
+					GuiLibrary.Settings[i] = {["Type"] = "Slider", ["Value"] = v["Api"]["Value"], ["OldMax"] = v["Api"]["Max"], ["OldDefault"] = v["Api"]["Default"]}
+				end
+				if v.Type == "TwoSlider" then
+					GuiLibrary.Settings[i] = {["Type"] = "TwoSlider", ["Value"] = v["Api"]["Value"], ["Value2"] = v["Api"]["Value2"], ["SliderPos1"] = (v.Object:FindFirstChild("Slider") and v.Object.Slider.ButtonSlider.Position.X.Scale or 0), ["SliderPos2"] = (v.Object:FindFirstChild("Slider") and v.Object.Slider.ButtonSlider2.Position.X.Scale or 0)}
+				end
+				if v.Type == "ColorSlider" then
+					GuiLibrary.Settings[i] = {["Type"] = "ColorSlider", ["Hue"] = v["Api"]["Hue"], ["Sat"] = v["Api"]["Sat"], ["Value"] = v["Api"]["Value"], ["RainbowValue"] = v["Api"]["RainbowValue"]}
+				end
+			end
+			WindowTable["GUIKeybind"] = {["Type"] = "GUIKeybind", ["Value"] = GuiLibrary["GUIKeybind"]}
+			writefile(baseDirectory.."Profiles/"..(GuiLibrary.CurrentProfile == "default" and "" or GuiLibrary.CurrentProfile)..(shared.CustomSaveVape or game.PlaceId)..".vapeprofile.txt", httpService:JSONEncode(GuiLibrary.Settings))
+			writefile(baseDirectory.."Profiles/"..(game.GameId).."GUIPositions.vapeprofile.txt", httpService:JSONEncode(WindowTable))
+		end
+	end
+
+	GuiLibrary.LoadSettings = function(customprofile)
+		if identifyexecutor and identifyexecutor():find("ScriptWare") == nil and listfiles then
+			for i,v in pairs(listfiles(baseDirectory.."Profiles")) do 
+				local newstr = v:gsub(baseDirectory.."Profiles", ""):sub(2, v:len())
+				local ext = (v:len() >= 12 and v:sub(v:len() - 12, v:len()))
+				if (ext and ext:find("vapeprofile") and ext:find("txt") == nil) then
+					writefile(baseDirectory.."Profiles/"..newstr..".txt", readfile(baseDirectory.."Profiles/"..newstr))
+					if delfile then
+						delfile(baseDirectory.."Profiles/"..newstr)
+					end
+				end
+			end
+		end
+		if isfile("flash/Profiles/GUIPositions.vapeprofile.txt") and game.GameId == 2619619496 then
+			writefile("flash/Profiles/"..(game.GameId).."GUIPositions.vapeprofile.txt", readfile("flash/Profiles/GUIPositions.vapeprofile.txt"))
+			if delfile then delfile("flash/Profiles/GUIPositions.vapeprofile.txt") end
+		end
+		if shared.VapePrivate then
+			if isfile("vapeprivate/Profiles/"..(game.GameId).."GUIPositions.vapeprofile.txt") == false and isfile("flash/Profiles/"..(game.GameId).."GUIPositions.vapeprofile.txt") then
+				writefile("vapeprivate/Profiles/"..(game.GameId).."GUIPositions.vapeprofile.txt", readfile("flash/Profiles/"..(game.GameId).."GUIPositions.vapeprofile.txt"))
+			end
+			if isfile("vapeprivate/Profiles/"..(shared.CustomSaveVape or game.PlaceId)..".vapeprofiles.txt") == false and isfile("flash/Profiles/"..(shared.CustomSaveVape or game.PlaceId)..".vapeprofiles.txt") then
+				writefile("vapeprivate/Profiles/"..(shared.CustomSaveVape or game.PlaceId)..".vapeprofiles.txt", readfile("flash/Profiles/"..(shared.CustomSaveVape or game.PlaceId)..".vapeprofiles.txt"))
+			end
+		end
+		local success2, result2 = pcall(function()
+			return httpService:JSONDecode(readfile(baseDirectory.."Profiles/"..(shared.CustomSaveVape or game.PlaceId)..".vapeprofiles.txt"))
+		end)
+		if success2 and type(result2) == "table" then
+			GuiLibrary.Profiles = result2
+		end
+		for i,v in pairs(GuiLibrary.Profiles) do
+			if v.Selected then
+				GuiLibrary.CurrentProfile = i
+			end
+		end
+		if customprofile then 
+			GuiLibrary.Profiles[GuiLibrary.CurrentProfile]["Selected"] = false
+			GuiLibrary.Profiles[customprofile] = GuiLibrary.Profiles[customprofile] or {["Keybind"] = "", ["Selected"] = true}
+			GuiLibrary.CurrentProfile = customprofile
+		end
+		if shared.VapePrivate then
+			if isfile("vapeprivate/Profiles/"..(GuiLibrary.CurrentProfile == "default" and "" or GuiLibrary.CurrentProfile)..(shared.CustomSaveVape or game.PlaceId)..".vapeprofile.txt") == false and isfile("flash/Profiles/"..(GuiLibrary.CurrentProfile == "default" and "" or GuiLibrary.CurrentProfile)..(shared.CustomSaveVape or game.PlaceId)..".vapeprofile.txt") then
+				writefile("vapeprivate/Profiles/"..(GuiLibrary.CurrentProfile == "default" and "" or GuiLibrary.CurrentProfile)..(shared.CustomSaveVape or game.PlaceId)..".vapeprofile.txt", readfile("flash/Profiles/"..(GuiLibrary.CurrentProfile == "default" and "" or GuiLibrary.CurrentProfile)..(shared.CustomSaveVape or game.PlaceId)..".vapeprofile.txt"))
+			end
+		end
+		local success3, result3 = pcall(function()
+			return httpService:JSONDecode(readfile(baseDirectory.."Profiles/"..(game.GameId).."GUIPositions.vapeprofile.txt"))
+		end)
+		if success3 and type(result3) == "table" then
+			for i,v in pairs(result3) do
+				local obj = GuiLibrary.ObjectsThatCanBeSaved[i]
+				if obj then
+					if v.Type == "Window" then
+						obj.Object.Position = UDim2.new(v["Position"][1], v["Position"][2], v["Position"][3], v["Position"][4])
+						obj.Object.Visible = v["Visible"]
+						if v["Expanded"] then
+							obj["Api"]["ExpandToggle"]()
+						end
+					end
+					if v.Type == "CustomWindow" then
+						obj.Object.Position = UDim2.new(v["Position"][1], v["Position"][2], v["Position"][3], v["Position"][4])
+						obj.Object.Visible = v["Visible"]
+						if v["Pinned"] then
+							obj["Api"]["PinnedToggle"]()
+						end
+						obj["Api"]["CheckVis"]()
+					end
+					if v.Type == "ButtonMain" then
+						if obj["Type"] == "ToggleMain" then
+							obj["Api"]["ToggleButton"](v["Enabled"], true)
+							if v["Keybind"] ~= "" then
+								obj["Api"]["Keybind"] = v["Keybind"]
+							end
+						else
+							if v["Enabled"] then
+								obj["Api"]["ToggleButton"](false)
+								if v["Keybind"] ~= "" then
+									obj["Api"]["SetKeybind"](v["Keybind"])
+								end
+							end
+						end
+					end
+					if v.Type == "DropdownMain" then 
+						obj["Api"]["SetValue"](v["Value"])
+					end
+					if v.Type == "ColorSliderMain" then
+						local valcheck = v["Hue"] ~= nil
+						obj["Api"]["SetValue"](valcheck and v["Hue"] or v["Value"] or 0.44, valcheck or v["Sat"] or 1, valcheck and v["Value"] or 1)
+						obj["Api"]["SetRainbow"](v["RainbowValue"])
+					end
+					if v.Type == "ColorSliderGUI" then
+						local valcheck = v["Hue"] ~= nil
+						obj["Api"]["SetValue"](valcheck and v["Hue"] and (v["Hue"] / 7) - 0.1 or v["Value"] or 0.44, valcheck or v["Sat"] or 1, valcheck and v["Value"] or 1)
+						obj["Api"]["SetRainbow"](v["RainbowValue"])
+					end
+					if v.Type == "SliderMain" then
+						obj["Api"]["SetValue"](v["Value"])
+					end
+					if v.Type == "TextBoxMain" then
+						obj["Api"]["SetValue"](v["Value"])
+					end
+				end
+				if v.Type == "GUIKeybind" then
+					GuiLibrary["GUIKeybind"] = v["Value"]
+				end
+			end
+		end
+		local success, result = pcall(function()
+			return httpService:JSONDecode(readfile(baseDirectory.."Profiles/"..(GuiLibrary.CurrentProfile == "default" and "" or GuiLibrary.CurrentProfile)..(shared.CustomSaveVape or game.PlaceId)..".vapeprofile.txt"))
+		end)
+		if success and type(result) == "table" then
+			GuiLibrary["LoadSettingsEvent"]:Fire(result)
+			for i,v in pairs(result) do
+				if v.Type == "Custom" and GuiLibrary.Settings[i] then
+					GuiLibrary.Settings[i] = v
+				end
+				local obj = GuiLibrary.ObjectsThatCanBeSaved[i]
+				if obj then
+					local starttick = tick()
+					if v.Type == "Dropdown" then
+						obj["Api"]["SetValue"](v["Value"])
+					end
+					if v.Type == "CustomWindow" then
+						obj.Object.Position = UDim2.new(v["Position"][1], v["Position"][2], v["Position"][3], v["Position"][4])
+						obj.Object.Visible = v["Visible"]
+						if v["Pinned"] then
+							obj["Api"]["PinnedToggle"]()
+						end
+						obj["Api"]["CheckVis"]()
+					end
+					if v.Type == "Button" then
+						if obj["Type"] == "Toggle" then
+							obj["Api"]["ToggleButton"](v["Enabled"], true)
+							if v["Keybind"] ~= "" then
+								obj["Api"]["Keybind"] = v["Keybind"]
+							end
+						elseif obj["Type"] == "TargetButton" then
+							obj["Api"]["ToggleButton"](v["Enabled"], true)
+						else
+							if v["Enabled"] then
+								obj["Api"]["ToggleButton"](false)
+								if v["Keybind"] ~= "" then
+									obj["Api"]["SetKeybind"](v["Keybind"])
+								end
+							end
+						end
+					end
+					if v.Type == "NewToggle" then
+						obj["Api"]["ToggleButton"](v["Enabled"], true)
+						if v["Keybind"] ~= "" then
+							obj["Api"]["Keybind"] = v["Keybind"]
+						end
+					end
+					if v.Type == "Slider" then
+						obj["Api"]["SetValue"](v["OldMax"] ~= obj["Api"]["Max"] and v["Value"] > obj["Api"]["Max"] and obj["Api"]["Max"] or (v["OldDefault"] ~= obj["Api"]["Default"] and v["Value"] == v["OldDefault"] and obj["Api"]["Default"] or v["Value"]))
+					end
+					if v.Type == "TextBox" then
+						obj["Api"]["SetValue"](v["Value"])
+					end
+					if v.Type == "TextList" then
+						obj["Api"]["RefreshValues"]((v["ObjectTable"] or {}))
+					end
+					if v.Type == "TextCircleList" then
+						obj["Api"]["RefreshValues"]((v["ObjectTable"] or {}), (v["ObjectTableEnabled"] or {}))
+					end
+					if v.Type == "TwoSlider" then
+						obj["Api"]["SetValue"](v["Value"] == obj["Api"]["Min"] and 0 or v["Value"])
+						obj["Api"]["SetValue2"](v["Value2"])
+						obj.Object.Slider.ButtonSlider.Position = UDim2.new(v["SliderPos1"], -8, 1, -9)
+						obj.Object.Slider.ButtonSlider2.Position = UDim2.new(v["SliderPos2"], -8, 1, -9)
+						obj.Object.Slider.FillSlider.Size = UDim2.new(0, obj.Object.Slider.ButtonSlider2.AbsolutePosition.X - obj.Object.Slider.ButtonSlider.AbsolutePosition.X, 1, 0)
+						obj.Object.Slider.FillSlider.Position = UDim2.new(obj.Object.Slider.ButtonSlider.Position.X.Scale, 0, 0, 0)
+						--obj.Object.Slider.FillSlider.Size = UDim2.new((v["Value"] < obj["Api"]["Max"] and v["Value"] or obj["Api"]["Max"]) / obj["Api"]["Max"], 0, 1, 0)
+					end
+					if v.Type == "ColorSlider" then
+						v["Hue"] = v["Hue"] or 0.44
+						v["Sat"] = v["Sat"] or 1
+						v["Value"] = v["Value"] or 1
+						obj["Api"]["SetValue"](v["Hue"], v["Sat"], v["Value"])
+						obj["Api"]["SetRainbow"](v["RainbowValue"])
+						obj.Object.Slider.ButtonSlider.Position = UDim2.new(math.clamp(v["Hue"], 0.02, 0.95), -9, 0, -7)
+						pcall(function()
+							obj["Object2"].Slider.ButtonSlider.Position = UDim2.new(math.clamp(v["Sat"], 0.02, 0.95), -9, 0, -7)
+							obj["Object3"].Slider.ButtonSlider.Position = UDim2.new(math.clamp(v["Value"], 0.02, 0.95), -9, 0, -7)
+						end)
+					end
+				end
+			end
+			for i,v in pairs(result) do
+				local obj = GuiLibrary.ObjectsThatCanBeSaved[i]
+				if obj then 
+					if v.Type == "OptionsButton" then
+						if v["Enabled"] then
+							GuiLibrary.ObjectsThatCanBeSaved[i]["Api"]["ToggleButton"](false)
+						end
+						if v["Keybind"] ~= "" then
+							GuiLibrary.ObjectsThatCanBeSaved[i]["Api"]["SetKeybind"](v["Keybind"])
+						end
+					end
+				end
+			end
+		end
+		loadedsuccessfully = true
+	end
+
+	GuiLibrary["SwitchProfile"] = function(profilename)
+		GuiLibrary.Profiles[GuiLibrary.CurrentProfile]["Selected"] = false
+		GuiLibrary.Profiles[profilename]["Selected"] = true
+		if (not isfile(baseDirectory.."Profiles/"..(profilename == "default" and "" or profilename)..(shared.CustomSaveVape or game.PlaceId)..".vapeprofile.txt")) then
+			local realprofile = GuiLibrary.CurrentProfile
+			GuiLibrary.CurrentProfile = profilename
+			GuiLibrary.SaveSettings()
+			GuiLibrary.CurrentProfile = realprofile
+		end
+		local vapeprivate = shared.VapePrivate
+		local oldindependent = shared.VapeIndependent
+		GuiLibrary.SelfDestruct()
+		if not oldindependent then
+			shared.VapeSwitchServers = true
+			shared.VapeOpenGui = (clickgui.Visible)
+			shared.VapePrivate = vapeprivate
+			loadstring(vapeGithubRequest("NewMainScript.lua"))()
+		end
+	end
+
+	GuiLibrary["RemoveObject"] = function(objname)
+		GuiLibrary.ObjectsThatCanBeSaved[objname]["Object"]:Remove()
+		if GuiLibrary.ObjectsThatCanBeSaved[objname]["Type"] == "OptionsButton" then 
+			GuiLibrary.ObjectsThatCanBeSaved[objname]["ChildrenObject"].Name = "RemovedChildren"
+		end
+		GuiLibrary.ObjectsThatCanBeSaved[objname] = nil
 	end
 
 	GuiLibrary["CreateMainWindow"] = function()
 		local windowapi = {}
 		local settingsexithovercolor = Color3.fromRGB(20, 20, 20)
-
 		local windowtitle = Instance.new("Frame")
 		windowtitle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 		windowtitle.Size = UDim2.new(0, 220, 0, 45)
 		windowtitle.Position = UDim2.new(0, 6, 0, 6)
 		windowtitle.Name = "MainWindow"
 		windowtitle.Parent = clickgui
-
 		local windowshadow = Instance.new("ImageLabel")
 		windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 		windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-		windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
+		windowshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
 		windowshadow.BackgroundTransparency = 1
 		windowshadow.ZIndex = -1
 		windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -187,16 +628,23 @@ if shared.flashExecuted then
 		windowshadow.ScaleType = Enum.ScaleType.Slice
 		windowshadow.SliceCenter = Rect.new(10, 10, 118, 118)
 		windowshadow.Parent = windowtitle
-
 		local windowlogo1 = Instance.new("ImageLabel")
 		windowlogo1.Size = UDim2.new(0, 62, 0, 18)
 		windowlogo1.Active = false
 		windowlogo1.Position = UDim2.new(0, 11, 0, 12)
 		windowlogo1.BackgroundTransparency = 1
-		windowlogo1.Image = shared.downloadFromGithub("assets/FlashLogo.png")
-		windowlogo1.Name = "Logo"
+		windowlogo1.Image = downloadVapeAsset("flash/assets/VapeLogo1.png")
+		windowlogo1.Name = "Logo1"
 		windowlogo1.Parent = windowtitle
-
+		local windowlogo2 = Instance.new("ImageLabel")
+		windowlogo2.Size = UDim2.new(0, 27, 0, 16)
+		windowlogo2.Active = false
+		windowlogo2.Position = UDim2.new(1, 1, 0, 1)
+		windowlogo2.BackgroundTransparency = 1
+		windowlogo2.ImageColor3 = Color3.fromHSV(0.44, 1, 1)
+		windowlogo2.Image = downloadVapeAsset("flash/assets/VapeLogo2.png")
+		windowlogo2.Name = "Logo2"
+		windowlogo2.Parent = windowlogo1
 		local settingstext = Instance.new("TextLabel")
 		settingstext.Size = UDim2.new(0, 155, 0, 41)
 		settingstext.BackgroundTransparency = 1
@@ -210,14 +658,12 @@ if shared.flashExecuted then
 		settingstext.Visible = false
 		settingstext.TextColor3 = Color3.fromRGB(201, 201, 201)
 		settingstext.Parent = windowtitle
-
 		local settingsbox = Instance.new("Frame")
 		settingsbox.Parent = settingstext
 		settingsbox.Size = UDim2.new(0, 220, 0, 45)
 		settingsbox.Position = UDim2.new(0, -36, 0, 0)
 		settingsbox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 		settingsbox.Parent = settingstext
-
 		local settingsbox2 = Instance.new("TextLabel")
 		settingsbox2.Size = UDim2.new(1, 0, 0, 16)
 		settingsbox2.Position = UDim2.new(0, 0, 1, -16)
@@ -227,21 +673,19 @@ if shared.flashExecuted then
 		settingsbox2.TextColor3 = Color3.fromRGB(80, 80, 80)
 		settingsbox2.Font = Enum.Font.SourceSans
 		settingsbox2.TextXAlignment = Enum.TextXAlignment.Right
-		settingsbox2.Text = "FlashWare "..Version.."  "
+		settingsbox2.Text = "Vape "..VERSION.."  "
 		settingsbox2.TextSize = 16
 		settingsbox2.Parent = windowtitle
-
 		local settingsbox3 = Instance.new("Frame")
 		settingsbox3.ZIndex = 1
 		settingsbox3.Size = UDim2.new(1, 0, 0, 3)
 		settingsbox3.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 		settingsbox3.BorderSizePixel = 0
 		settingsbox3.Parent = settingsbox2
-
 		local settingswheel = Instance.new("ImageButton")
 		settingswheel.Name = "SettingsWheel"
 		settingswheel.Size = UDim2.new(0, 14, 0, 14)
-		settingswheel.Image = shared.downloadFromGithub("assets/SettingsWheel.png")
+		settingswheel.Image = downloadVapeAsset("flash/assets/SettingsWheel1.png")
 		settingswheel.Position = UDim2.new(1, -25, 0, 14)
 		settingswheel.BackgroundTransparency = 1
 		settingswheel.Parent = windowtitle
@@ -252,11 +696,10 @@ if shared.flashExecuted then
 		settingswheel.MouseLeave:Connect(function()
 			settingswheel.ImageColor3 = Color3.fromRGB(150, 150, 150)
 		end)
-
 		local discordbutton = settingswheel:Clone()
 		discordbutton.Size = UDim2.new(0, 16, 0, 16)
 		discordbutton.ImageColor3 = Color3.new(1, 1, 1)
-		discordbutton.Image = shared.downloadFromGithub("assets/DiscordIcon.png")
+		discordbutton.Image = downloadVapeAsset("flash/assets/DiscordIcon.png")
 		discordbutton.Position = UDim2.new(1, -52, 0, 13)
 		discordbutton.Parent = windowtitle
 		discordbutton.MouseButton1Click:Connect(function()
@@ -266,8 +709,8 @@ if shared.flashExecuted then
 						local reqbody = {
 							["nonce"] = httpService:GenerateGUID(false),
 							["args"] = {
-								["invite"] = {["code"] = "WKs8k65AaR"},
-								["code"] = "WKs8k65AaR",
+								["invite"] = {["code"] = "wjRYjVWkya"},
+								["code"] = "wjRYjVWkya",
 							},
 							["cmd"] = "INVITE_BROWSER"
 						}
@@ -285,9 +728,8 @@ if shared.flashExecuted then
 				end
 			end)
 			task.spawn(function()
-				local hover3textsize = textService:GetTextSize("Discord invite set to clipboard", 16, Enum.Font.SourceSans, Vector2.new(99999, 99999))
+				local hover3textsize = textService:GetTextSize("Discord set to clipboard!", 16, Enum.Font.SourceSans, Vector2.new(99999, 99999))
 				local pos = inputService:GetMouseLocation()
-
 				local hoverbox3 = Instance.new("TextLabel")
 				hoverbox3.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 				hoverbox3.Active = false
@@ -300,11 +742,10 @@ if shared.flashExecuted then
 				hoverbox3.TextSize = 16
 				hoverbox3.Visible = true
 				hoverbox3.Parent = clickgui
-
 				local hoverround3 = Instance.new("UICorner")
 				hoverround3.CornerRadius = UDim.new(0, 4)
 				hoverround3.Parent = hoverbox3
-				setclipboard("https://discord.gg/WKs8k65AaR")
+				setclipboard("https://discord.com/invite/wjRYjVWkya")
 				task.wait(1)
 				hoverbox3:Remove()
 			end)
@@ -314,12 +755,11 @@ if shared.flashExecuted then
 		settingsexit.ImageColor3 = Color3.fromRGB(121, 121, 121)
 		settingsexit.Size = UDim2.new(0, 24, 0, 24)
 		settingsexit.AutoButtonColor = false
-		settingsexit.Image = shared.downloadFromGithub("assets/ExitIcon.png")
+		settingsexit.Image = downloadVapeAsset("flash/assets/ExitIcon1.png")
 		settingsexit.Visible = false
 		settingsexit.Position = UDim2.new(1, -31, 0, 8)
 		settingsexit.BackgroundColor3 = settingsexithovercolor
 		settingsexit.Parent = windowtitle
-
 		local settingsexitround = Instance.new("UICorner")
 		settingsexitround.CornerRadius = UDim.new(0, 16)
 		settingsexitround.Parent = settingsexit
@@ -329,14 +769,12 @@ if shared.flashExecuted then
 		settingsexit.MouseLeave:Connect(function()
 			tweenService:Create(settingsexit, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundColor3 = settingsexithovercolor, ImageColor3 = Color3.fromRGB(121, 121, 121)}):Play()
 		end)
-
 		local children = Instance.new("Frame")
 		children.BackgroundTransparency = 1
 		children.Name = "Children"
 		children.Size = UDim2.new(1, 0, 1, -4)
 		children.Position = UDim2.new(0, 0, 0, 41)
 		children.Parent = windowtitle
-
 		local extraframe = Instance.new("Frame")
 		extraframe.Size = UDim2.new(0, 220, 0, 40)
 		extraframe.BorderSizePixel = 0
@@ -344,46 +782,40 @@ if shared.flashExecuted then
 		extraframe.LayoutOrder = 99999
 		extraframe.Name = "Extras"
 		extraframe.Parent = children
-
 		local overlaysicons = Instance.new("Frame")
 		overlaysicons.Size = UDim2.new(0, 145, 0, 18)
 		overlaysicons.Position = UDim2.new(0, 33, 0, 11)
 		overlaysicons.BackgroundTransparency = 1
 		overlaysicons.Parent = extraframe
-
 		local overlaysbkg = Instance.new("Frame")
 		overlaysbkg.BackgroundTransparency = 0.5
 		overlaysbkg.BackgroundColor3 = Color3.new(0, 0, 0)
 		overlaysbkg.BorderSizePixel = 0
 		overlaysbkg.Visible = false
 		overlaysbkg.Parent = windowtitle
-
 		local overlaystitle = Instance.new("Frame")
 		overlaystitle.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 		overlaystitle.Size = UDim2.new(0, 220, 0, 45)
 		overlaystitle.Position = UDim2.new(0, 0, 1, -45)
 		overlaystitle.Parent = overlaysbkg
-
 		local overlaysicon = Instance.new("ImageLabel")
 		overlaysicon.Name = "OverlaysWindowIcon"
 		overlaysicon.Size = UDim2.new(0, 14, 0, 12)
 		overlaysicon.Visible = true
-		overlaysicon.Image = shared.downloadFromGithub("assets/TextGUIIcon4.png")
+		overlaysicon.Image = downloadVapeAsset("flash/assets/TextGUIIcon4.png")
 		overlaysicon.ImageColor3 = Color3.fromRGB(209, 209, 209)
 		overlaysicon.BackgroundTransparency = 1
 		overlaysicon.Position = UDim2.new(0, 10, 0, 15)
 		overlaysicon.Parent = overlaystitle
-
 		local overlaysexit = Instance.new("ImageButton")
 		overlaysexit.Name = "OverlaysExit"
 		overlaysexit.ImageColor3 = Color3.fromRGB(121, 121, 121)
 		overlaysexit.Size = UDim2.new(0, 24, 0, 24)
 		overlaysexit.AutoButtonColor = false
-		overlaysexit.Image = shared.downloadFromGithub("assets/ExitIcon.png")
+		overlaysexit.Image = downloadVapeAsset("flash/assets/ExitIcon1.png")
 		overlaysexit.Position = UDim2.new(1, -32, 0, 9)
 		overlaysexit.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 		overlaysexit.Parent = overlaystitle
-
 		local overlaysexitround = Instance.new("UICorner")
 		overlaysexitround.CornerRadius = UDim.new(0, 16)
 		overlaysexitround.Parent = overlaysexit
@@ -393,16 +825,14 @@ if shared.flashExecuted then
 		overlaysexit.MouseLeave:Connect(function()
 			tweenService:Create(overlaysexit, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundColor3 = Color3.fromRGB(26, 25, 26), ImageColor3 = Color3.fromRGB(121, 121, 121)}):Play()
 		end)
-
 		local overlaysbutton = Instance.new("ImageButton")
 		overlaysbutton.Size = UDim2.new(0, 12, 0, 10)
 		overlaysbutton.Name = "MainButton"
 		overlaysbutton.Position = UDim2.new(1, -23, 0, 15)
 		overlaysbutton.BackgroundTransparency = 1
 		overlaysbutton.AutoButtonColor = false
-		overlaysbutton.Image = shared.downloadFromGithub("assets/TextGUIIcon2.png")
+		overlaysbutton.Image = downloadVapeAsset("flash/assets/TextGUIIcon2.png")
 		overlaysbutton.Parent = extraframe
-
 		local overlaystext = Instance.new("TextLabel")
 		overlaystext.Size = UDim2.new(0, 155, 0, 39)
 		overlaystext.BackgroundTransparency = 1
@@ -414,7 +844,6 @@ if shared.flashExecuted then
 		overlaystext.Text = "Overlays"
 		overlaystext.TextColor3 = Color3.fromRGB(201, 201, 201)
 		overlaystext.Parent = overlaystitle
-
 		local overlayschildren = Instance.new("Frame")
 		overlayschildren.BackgroundTransparency = 1
 		overlayschildren.Size = UDim2.new(0, 220, 1, -4)
@@ -422,7 +851,6 @@ if shared.flashExecuted then
 		overlayschildren.Position = UDim2.new(0, 0, 0, 41)
 		overlayschildren.Parent = overlaystitle
 		overlayschildren.Visible = true
-
 		local children2 = Instance.new("Frame")
 		children2.BackgroundTransparency = 1
 		children2.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
@@ -432,38 +860,30 @@ if shared.flashExecuted then
 		children2.Position = UDim2.new(0, 0, 0, 41)
 		children2.Parent = windowtitle
 		children2.Visible = false
-
 		local divider3 = Instance.new("Frame")
 		divider3.Size = UDim2.new(1, 0, 0, 1)
 		divider3.Name = "Divider"
 		divider3.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
 		divider3.BorderSizePixel = 0
 		divider3.Parent = children2
-
 		local windowcorner = Instance.new("UICorner")
 		windowcorner.CornerRadius = UDim.new(0, 4)
 		windowcorner.Parent = windowtitle
-
 		local windowcorner2 = Instance.new("UICorner")
 		windowcorner2.CornerRadius = UDim.new(0, 4)
 		windowcorner2.Parent = settingsbox
-
 		local windowcorner3 = Instance.new("UICorner")
 		windowcorner3.CornerRadius = UDim.new(0, 4)
 		windowcorner3.Parent = settingsbox2
-
 		local overlayscorner = Instance.new("UICorner")
 		overlayscorner.CornerRadius = UDim.new(0, 4)
 		overlayscorner.Parent = overlaystitle
-
 		local overlayscorner2 = Instance.new("UICorner")
 		overlayscorner2.CornerRadius = UDim.new(0, 4)
 		overlayscorner2.Parent = overlaysbkg
-
 		local uilistlayout = Instance.new("UIListLayout")
 		uilistlayout.SortOrder = Enum.SortOrder.LayoutOrder
 		uilistlayout.Parent = children
-
 		local uilistlayout2 = Instance.new("UIListLayout")
 		uilistlayout2.SortOrder = Enum.SortOrder.LayoutOrder
 		uilistlayout2.Parent = children2
@@ -476,7 +896,6 @@ if shared.flashExecuted then
 			windowtitle.Size = UDim2.new(0, 220, 0, 45 + uilistlayout.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))
 			overlaysbkg.Size = UDim2.new(0, 220, 0, 45 + uilistlayout.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))
 		end)
-
 		local uilistlayout3 = Instance.new("UIListLayout")
 		uilistlayout3.SortOrder = Enum.SortOrder.LayoutOrder
 		uilistlayout3.Parent = overlayschildren
@@ -484,7 +903,6 @@ if shared.flashExecuted then
 			overlaystitle.Size = UDim2.new(0, 220, 0, 45 + uilistlayout3.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))
 			overlaystitle.Position = UDim2.new(0, 0, 1, -(48 + (uilistlayout3.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))))
 		end)
-
 		local uilistlayout4 = Instance.new("UIListLayout")
 		uilistlayout4.SortOrder = Enum.SortOrder.LayoutOrder
 		uilistlayout4.FillDirection = Enum.FillDirection.Horizontal
@@ -492,7 +910,6 @@ if shared.flashExecuted then
 		uilistlayout4.VerticalAlignment = Enum.VerticalAlignment.Center
 		uilistlayout4.HorizontalAlignment = Enum.HorizontalAlignment.Right
 		uilistlayout4.Parent = overlaysicons
-
 		local windowbackbutton = Instance.new("ImageButton")
 		windowbackbutton.Size = UDim2.new(0, 16, 0, 16)
 		windowbackbutton.Position = UDim2.new(0, 11, 0, 13)
@@ -516,12 +933,9 @@ if shared.flashExecuted then
 		windowbackbutton.MouseLeave:Connect(function()
 			windowbackbutton.ImageTransparency = 0.55
 		end)
-
-		windowbackbutton.Image = shared.downloadFromGithub("assets/BackIcon.png")
+		windowbackbutton.Image = downloadVapeAsset("flash/assets/BackIcon.png")
 		windowbackbutton.Parent = windowtitle
-
 		dragGUI(windowtitle)
-
 		windowapi["ExpandToggle"] = function() end
 		GuiLibrary.ObjectsThatCanBeSaved["GUIWindow"] = {["Object"] = windowtitle, ["ChildrenObject"] = children, ["Type"] = "Window", ["Api"] = windowapi}
 
@@ -583,7 +997,6 @@ if shared.flashExecuted then
 				divider.Parent = overlayschildren
 			end
 			local amount = #overlayschildren:GetChildren()
-
 			local buttontext = Instance.new("TextLabel")
 			buttontext.BackgroundTransparency = 1
 			buttontext.Name = "ButtonText"
@@ -597,14 +1010,12 @@ if shared.flashExecuted then
 			buttontext.Font = Enum.Font.SourceSans
 			buttontext.TextXAlignment = Enum.TextXAlignment.Left
 			buttontext.Parent = overlayschildren
-
 			local buttonicon = Instance.new("ImageLabel")
 			buttonicon.Size = UDim2.new(0, 20, 0, 19)
 			buttonicon.Position = UDim2.new(0, 10, 0, 11)
 			buttonicon.BackgroundTransparency = 1
-			buttonicon.Image = shared.downloadFromGithub(argstable["Icon"])
+			buttonicon.Image = downloadVapeAsset(argstable["Icon"])
 			buttonicon.Parent = buttontext
-
 			local toggleframe1 = Instance.new("TextButton")
 			toggleframe1.AutoButtonColor = false
 			toggleframe1.Size = UDim2.new(0, 22, 0, 12)
@@ -614,7 +1025,6 @@ if shared.flashExecuted then
 			toggleframe1.Name = "ToggleFrame1"
 			toggleframe1.Position = UDim2.new(1, -32, 0, 14)
 			toggleframe1.Parent = buttontext
-
 			local toggleframe2 = Instance.new("Frame")
 			toggleframe2.Size = UDim2.new(0, 8, 0, 8)
 			toggleframe2.Active = false
@@ -622,21 +1032,18 @@ if shared.flashExecuted then
 			toggleframe2.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 			toggleframe2.BorderSizePixel = 0
 			toggleframe2.Parent = toggleframe1
-
 			local uicorner = Instance.new("UICorner")
 			uicorner.CornerRadius = UDim.new(0, 16)
 			uicorner.Parent = toggleframe1
-
 			local uicorner2 = Instance.new("UICorner")
 			uicorner2.CornerRadius = UDim.new(0, 16)
 			uicorner2.Parent = toggleframe2
-
 			local toggleicon = Instance.new("ImageLabel")
 			toggleicon.Size = UDim2.new(0, 16, 0, 16)
 			toggleicon.BackgroundTransparency = 1
 			toggleicon.Visible = false
 			toggleicon.LayoutOrder = argstable["Priority"]
-			toggleicon.Image = shared.downloadFromGithub(argstable["Icon"])
+			toggleicon.Image = downloadVapeAsset(argstable["Icon"])
 			toggleicon.Parent = overlaysicons
 
 			buttonapi["Enabled"] = false
@@ -723,18 +1130,15 @@ if shared.flashExecuted then
 				children3.Position = UDim2.new(0, 0, 0, 41)
 				children3.Parent = windowtitle
 				children3.Visible = false
-
 				local divider = Instance.new("Frame")
 				divider.Size = UDim2.new(1, 0, 0, 1)
 				divider.Name = "Divider"
 				divider.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
 				divider.BorderSizePixel = 0
 				divider.Parent = children3
-
 				local uilistlayout3 = Instance.new("UIListLayout")
 				uilistlayout3.SortOrder = Enum.SortOrder.LayoutOrder
 				uilistlayout3.Parent = children3
-
 				local button = Instance.new("TextButton")
 				button.Name = text.."Button"
 				button.AutoButtonColor = false
@@ -744,7 +1148,6 @@ if shared.flashExecuted then
 				button.Text = ""
 				button.LayoutOrder = amount
 				button.Parent = children2
-
 				local buttontext = Instance.new("TextLabel")
 				buttontext.BackgroundTransparency = 1
 				buttontext.Name = "ButtonText"
@@ -757,16 +1160,14 @@ if shared.flashExecuted then
 				buttontext.TextXAlignment = Enum.TextXAlignment.Left
 				buttontext.Position = UDim2.new(0, 10, 0, 0)
 				buttontext.Parent = button
-
 				local arrow = Instance.new("ImageLabel")
 				arrow.Size = UDim2.new(0, 4, 0, 8)
 				arrow.BackgroundTransparency = 1
 				arrow.Name = "RightArrow"
 				arrow.Position = UDim2.new(1, -20, 0, 16)
-				arrow.Image = shared.downloadFromGithub("assets/RightArrow.png")
+				arrow.Image = downloadVapeAsset("flash/assets/RightArrow.png")
 				arrow.Active = false
 				arrow.Parent = button
-
 				local windowbackbutton2 = Instance.new("ImageButton")
 				windowbackbutton2.Size = UDim2.new(0, 16, 0, 16)
 				windowbackbutton2.Position = UDim2.new(0, 11, 0, 13)
@@ -790,9 +1191,8 @@ if shared.flashExecuted then
 				windowbackbutton2.MouseLeave:Connect(function()
 					windowbackbutton2.ImageTransparency = 0.55
 				end)
-				windowbackbutton2.Image = shared.downloadFromGithub("assets/BackIcon.png")
+				windowbackbutton2.Image = downloadVapeAsset("flash/assets/BackIcon.png")
 				windowbackbutton2.Parent = windowtitle
-
 				button.MouseEnter:Connect(function() 
 					tweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundColor3 = Color3.fromRGB(31, 30, 31)}):Play()
 					buttontext.TextColor3 = Color3.fromRGB(207, 207, 207)
@@ -821,7 +1221,6 @@ if shared.flashExecuted then
 					local buttonapi = {}
 					local currentanim
 					local amount = #children3:GetChildren()
-
 					local buttontext = Instance.new("TextButton")
 					buttontext.AutoButtonColor = false
 					buttontext.BackgroundTransparency = 1
@@ -837,16 +1236,14 @@ if shared.flashExecuted then
 					buttontext.TextXAlignment = Enum.TextXAlignment.Left
 					buttontext.Position = UDim2.new(0, (icon and 36 or 10), 0, 0)
 					buttontext.Parent = children3
-
 					local buttonarrow = Instance.new("ImageLabel")
 					buttonarrow.Size = UDim2.new(1, 0, 0, 4)
 					buttonarrow.Position = UDim2.new(0, 0, 1, -4)
 					buttonarrow.BackgroundTransparency = 1
 					buttonarrow.Name = "ToggleArrow"
-					buttonarrow.Image = shared.downloadFromGithub("assets/ToggleArrow.png")
+					buttonarrow.Image = downloadVapeAsset("flash/assets/ToggleArrow.png")
 					buttonarrow.Visible = false
 					buttonarrow.Parent = buttontext
-
 					local toggleframe1 = Instance.new("Frame")
 					toggleframe1.Size = UDim2.new(0, 22, 0, 12)
 					toggleframe1.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
@@ -854,7 +1251,6 @@ if shared.flashExecuted then
 					toggleframe1.Name = "ToggleFrame1"
 					toggleframe1.Position = UDim2.new(1, -32, 0, 10)
 					toggleframe1.Parent = buttontext
-
 					local toggleframe2 = Instance.new("Frame")
 					toggleframe2.Size = UDim2.new(0, 8, 0, 8)
 					toggleframe2.Active = false
@@ -862,11 +1258,9 @@ if shared.flashExecuted then
 					toggleframe2.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 					toggleframe2.BorderSizePixel = 0
 					toggleframe2.Parent = toggleframe1
-
 					local uicorner = Instance.new("UICorner")
 					uicorner.CornerRadius = UDim.new(0, 16)
 					uicorner.Parent = toggleframe1
-
 					local uicorner2 = Instance.new("UICorner")
 					uicorner2.CornerRadius = UDim.new(0, 16)
 					uicorner2.Parent = toggleframe2
@@ -927,6 +1321,7 @@ if shared.flashExecuted then
 				end
 
 				windowapi3["CreateSlider"] = function(argstable)
+				
 					local sliderapi = {}
 					local amount2 = #children3:GetChildren()
 					local frame = Instance.new("Frame")
@@ -936,7 +1331,6 @@ if shared.flashExecuted then
 					frame.LayoutOrder = amount2
 					frame.Name = argstable["Name"]
 					frame.Parent = children3
-
 					local text1 = Instance.new("TextLabel")
 					text1.Font = Enum.Font.SourceSans
 					text1.TextXAlignment = Enum.TextXAlignment.Left
@@ -946,7 +1340,6 @@ if shared.flashExecuted then
 					text1.BackgroundTransparency = 1
 					text1.TextSize = 17
 					text1.Parent = frame
-
 					local text2 = Instance.new("TextButton")
 					text2.Font = Enum.Font.SourceSans
 					text2.AutoButtonColor = false
@@ -958,7 +1351,6 @@ if shared.flashExecuted then
 					text2.BackgroundTransparency = 1
 					text2.TextSize = 17
 					text2.Parent = frame
-
 					local text3 = Instance.new("TextBox")
 					text3.Visible = false
 					text3.Font = Enum.Font.SourceSans
@@ -970,7 +1362,6 @@ if shared.flashExecuted then
 					text3.Size = UDim2.new(0, 40, 0, 25)
 					text3.TextSize = 17
 					text3.Parent = frame
-
 					local textdown = Instance.new("Frame")
 					textdown.BackgroundColor3 = Color3.fromRGB(37, 36, 37)
 					textdown.Size = UDim2.new(0, 30, 0, 2)
@@ -978,14 +1369,12 @@ if shared.flashExecuted then
 					textdown.Visible = false
 					textdown.BorderSizePixel = 0
 					textdown.Parent = text2
-
 					local textdown2 = Instance.new("Frame")
 					textdown2.BackgroundColor3 = Color3.fromRGB(41, 41, 41)
 					textdown2.Size = UDim2.new(0, 30, 0, 2)
 					textdown2.Position = UDim2.new(1, -38, 1, -4)
 					textdown2.BorderSizePixel = 0
 					textdown2.Parent = text3
-
 					local slider1 = Instance.new("Frame")
 					slider1.Size = UDim2.new(0, 200, 0, 2)
 					slider1.BorderSizePixel = 0
@@ -993,20 +1382,18 @@ if shared.flashExecuted then
 					slider1.Position = UDim2.new(0, 10, 0, 32)
 					slider1.Name = "Slider"
 					slider1.Parent = frame
-
 					local slider2 = Instance.new("Frame")
 					slider2.BorderSizePixel = 0
 					slider2.Size = UDim2.new(math.clamp(((argstable["Default"] or argstable["Min"]) / argstable["Max"]), 0.02, 0.97), 0, 1, 0)
 					slider2.BackgroundColor3 = Color3.fromHSV(GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Hue"], GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Sat"], GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Value"])
 					slider2.Name = "FillSlider"
 					slider2.Parent = slider1
-
 					local slider3 = Instance.new("ImageButton")
 					slider3.AutoButtonColor = false
 					slider3.Size = UDim2.new(0, 24, 0, 16)
 					slider3.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 					slider3.BorderSizePixel = 0
-					slider3.Image = shared.downloadFromGithub("assets/SliderButton1.png")
+					slider3.Image = downloadVapeAsset("flash/assets/SliderButton1.png")
 					slider3.Position = UDim2.new(1, -11, 0, -7)
 					slider3.Parent = slider2
 					slider3.Name = "ButtonSlider"
@@ -1022,7 +1409,6 @@ if shared.flashExecuted then
 						text2.Text = sliderapi["Value"] .. ".0 "..(argstable["Percent"] and "%" or " ").." "
 						argstable["Function"](val)
 					end
-
 					slider3.MouseButton1Down:Connect(function()
 						local x,y,xscale,yscale,xscale2 = RelativeXY(slider1, inputService:GetMouseLocation())
 						sliderapi["SetValue"](math.floor(argstable["Min"] + ((argstable["Max"] - argstable["Min"]) * xscale)))
@@ -1090,7 +1476,6 @@ if shared.flashExecuted then
 					local buttonapi = {}
 					local currentanim
 					local amount = #children3:GetChildren()
-
 					local buttontext = Instance.new("Frame")
 					buttontext.BackgroundTransparency = 1
 					buttontext.Name = "ButtonText"
@@ -1100,14 +1485,12 @@ if shared.flashExecuted then
 					buttontext.Active = false
 					buttontext.Position = UDim2.new(0, (icon and 36 or 10), 0, 0)
 					buttontext.Parent = children3
-
 					local toggleframe2 = Instance.new("Frame")
 					toggleframe2.Size = UDim2.new(0, 199, 0, 26)
 					toggleframe2.Position = UDim2.new(0, 11, 0, 1)
 					toggleframe2.BackgroundColor3 = Color3.fromRGB(38, 37, 38)
 					toggleframe2.Name = "ToggleFrame2"
 					toggleframe2.Parent = buttontext
-
 					local toggleframe1 = Instance.new("TextButton")
 					toggleframe1.AutoButtonColor = false
 					toggleframe1.Size = UDim2.new(0, 195, 0, 22)
@@ -1120,11 +1503,9 @@ if shared.flashExecuted then
 					toggleframe1.Name = "ToggleFrame1"
 					toggleframe1.Position = UDim2.new(0, 2, 0, 2)
 					toggleframe1.Parent = toggleframe2
-
 					local uicorner = Instance.new("UICorner")
 					uicorner.CornerRadius = UDim.new(0, 3)
 					uicorner.Parent = toggleframe1
-
 					local uicorner2 = Instance.new("UICorner")
 					uicorner2.CornerRadius = UDim.new(0, 3)
 					uicorner2.Parent = toggleframe2
@@ -1176,7 +1557,7 @@ if shared.flashExecuted then
 			bindbkg.Visible = true
 			bindbkg.Parent = frame
 			local bindimg = Instance.new("ImageLabel")
-			bindimg.Image = shared.downloadFromGithub("assets/KeybindIcon.png")
+			bindimg.Image = downloadVapeAsset("flash/assets/KeybindIcon.png")
 			bindimg.BackgroundTransparency = 1
 			bindimg.ImageColor3 = Color3.fromRGB(225, 225, 225)
 			bindimg.Size = UDim2.new(0, 12, 0, 12)
@@ -1195,7 +1576,7 @@ if shared.flashExecuted then
 			bindtext.Visible = (GuiLibrary["GUIKeybind"] ~= "")
 			local bindtext2 = Instance.new("ImageLabel")
 			bindtext2.Size = UDim2.new(0, 154, 0, 41)
-			bindtext2.Image = shared.downloadFromGithub("assets/BindBackground.png")
+			bindtext2.Image = downloadVapeAsset("flash/assets/BindBackground.png")
 			bindtext2.BackgroundTransparency = 1
 			bindtext2.ScaleType = Enum.ScaleType.Slice
 			bindtext2.SliceCenter = Rect.new(0, 0, 140, 41)
@@ -1237,12 +1618,12 @@ if shared.flashExecuted then
 				end
 			end)
 			bindbkg.MouseEnter:Connect(function() 
-				bindimg.Image = shared.downloadFromGithub("assets/PencilIcon.png") 
+				bindimg.Image = downloadVapeAsset("flash/assets/PencilIcon.png") 
 				bindimg.Visible = true
 				bindtext.Visible = false
 			end)
 			bindbkg.MouseLeave:Connect(function() 
-				bindimg.Image = shared.downloadFromGithub("assets/KeybindIcon.png")
+				bindimg.Image = downloadVapeAsset("flash/assets/KeybindIcon.png")
 				if GuiLibrary["GUIKeybind"] ~= "" then
 					bindimg.Visible = false
 					bindtext.Visible = true
@@ -1331,7 +1712,7 @@ if shared.flashExecuted then
 			slider1.Name = "Slider"
 			slider1.Parent = frame
 			local sliderrainbow = Instance.new("ImageButton")
-			sliderrainbow.Image = shared.downloadFromGithub("assets/RainbowIcon1.png")
+			sliderrainbow.Image = downloadVapeAsset("flash/assets/RainbowIcon1.png")
 			sliderrainbow.BackgroundTransparency = 1
 			sliderrainbow.Size = UDim2.new(0, 12, 0, 12)
 			sliderrainbow.Position = UDim2.new(1, -43, 0, 10)
@@ -1354,7 +1735,7 @@ if shared.flashExecuted then
 			slider3.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 			slider3.BorderSizePixel = 0
 			slider3.ZIndex = 2
-			slider3.Image = shared.downloadFromGithub("assets/ColorSlider1.png")
+			slider3.Image = downloadVapeAsset("flash/assets/ColorSlider1.png")
 			slider3.Position = UDim2.new(0, sldiercolorpos[4] - 3, 0, -5)
 			slider3.Parent = slider1
 			slider3.Name = "ButtonSlider"
@@ -1365,12 +1746,35 @@ if shared.flashExecuted then
 			sliderapi["Saved"] = 4
 			sliderapi["RainbowValue"] = false
 			sliderapi["Object"] = frame
+
+			--[[
+				sliderapi["Hue"] = (argstable["Default"] or 0.44)
+				sliderapi["Sat"] = 1
+				sliderapi["Value"] = 1
+				sliderapi["Object"] = frame
+				sliderapi["RainbowValue"] = false
+				sliderapi["SetValue"] = function(hue, sat, val)
+					hue = (hue or sliderapi["Hue"])
+					sat = (sat or sliderapi["Sat"])
+					val = (val or sliderapi["Value"])
+					text2.BackgroundColor3 = Color3.fromHSV(hue, sat, val)
+					pcall(function()
+						slidersat.Slider.UIGradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 0, val)), ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, 1, val))})
+						sliderval.Slider.UIGradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 0, 0)), ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, sat, 1))})
+					end)
+					sliderapi["Hue"] = hue
+					sliderapi["Sat"] = sat
+					sliderapi["Value"] = val
+					slider3.Position = UDim2.new(math.clamp(hue, 0.02, 0.95), -9, 0, -7)
+					argstable["Function"](hue, sat, val)
+				end
+			]]
 			sliderapi["SetValue"] = function(hue, sat, val)
 				hue = hue or 0.44
 				sat = sat or 0.7
 				val = val or 0.9
-				slider3.Image = (sliderapi["RainbowValue"] and shared.downloadFromGithub("assets/ColorSlider2.png") or shared.downloadFromGithub("assets/ColorSlider1.png"))
-				sliderrainbow.Image = (sliderapi["RainbowValue"] and shared.downloadFromGithub("assets/RainbowIcon2.png") or shared.downloadFromGithub("assets/RainbowIcon1.png"))
+				slider3.Image = (sliderapi["RainbowValue"] and downloadVapeAsset("flash/assets/ColorSlider2.png") or downloadVapeAsset("flash/assets/ColorSlider1.png"))
+				sliderrainbow.Image = (sliderapi["RainbowValue"] and downloadVapeAsset("flash/assets/RainbowIcon2.png") or downloadVapeAsset("flash/assets/RainbowIcon1.png"))
 				if sliderapi["RainbowValue"] then
 					val = math.clamp(val, min, max)
 					text2.BackgroundColor3 = Color3.fromHSV(hue, sat, val)
@@ -1406,13 +1810,13 @@ if shared.flashExecuted then
 							else
 								coroutine.yield(heh)
 							end
-						until sliderapi["RainbowValue"] == false or shared.VapeExecuted == nil
+						until sliderapi["RainbowValue"] == false or shared.FlashExecuted == nil
 					end))
 				end
 			end
 			sliderrainbow.MouseButton1Click:Connect(function()
 				sliderapi["SetRainbow"](not sliderapi["RainbowValue"])
-				sliderrainbow.Image = (sliderapi["RainbowValue"] and shared.downloadFromGithub("assets/RainbowIcon2.png") or shared.downloadFromGithub("assets/RainbowIcon1.png"))
+				sliderrainbow.Image = (sliderapi["RainbowValue"] and downloadVapeAsset("flash/assets/RainbowIcon2.png") or downloadVapeAsset("flash/assets/RainbowIcon1.png"))
 			end)
 			slider1.MouseButton1Down:Connect(function()
 				local x,y,xscale,yscale,xscale2 = RelativeXY(slider1, inputService:GetMouseLocation())
@@ -1489,7 +1893,7 @@ if shared.flashExecuted then
 			buttonarrow.Position = UDim2.new(0, 0, 1, -4)
 			buttonarrow.BackgroundTransparency = 1
 			buttonarrow.Name = "ToggleArrow"
-			buttonarrow.Image = shared.downloadFromGithub("assets/ToggleArrow.png")
+			buttonarrow.Image = downloadVapeAsset("flash/assets/ToggleArrow.png")
 			buttonarrow.Visible = false
 			buttonarrow.Parent = buttontext
 			local toggleframe1 = Instance.new("Frame")
@@ -1597,7 +2001,7 @@ if shared.flashExecuted then
 			arrow.BackgroundTransparency = 1
 			arrow.Name = "RightArrow"
 			arrow.Position = UDim2.new(1, -20, 0, 16)
-			arrow.Image = shared.downloadFromGithub("assets/RightArrow.png")
+			arrow.Image = downloadVapeAsset("flash/assets/RightArrow.png")
 			arrow.Active = false
 			arrow.Parent = button
 			local buttonicon
@@ -1607,7 +2011,7 @@ if shared.flashExecuted then
 				buttonicon.Size = UDim2.new(0, argstable["IconSize"] - 2, 0, 14)
 				buttonicon.BackgroundTransparency = 1
 				buttonicon.Position = UDim2.new(0, 10, 0, 13)
-				buttonicon.Image = shared.downloadFromGithub(argstable["Icon"])
+				buttonicon.Image = downloadVapeAsset(argstable["Icon"])
 				buttonicon.Name = "ButtonIcon"
 				buttonicon.Parent = button
 			end
@@ -1682,7 +2086,7 @@ if shared.flashExecuted then
 		local windowshadow = Instance.new("ImageLabel")
 		windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 		windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-		windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
+		windowshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
 		windowshadow.BackgroundTransparency = 1
 		windowshadow.ZIndex = -1
 		windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -1692,7 +2096,7 @@ if shared.flashExecuted then
 		windowshadow.Parent = windowtitle
 		local windowicon = Instance.new("ImageLabel")
 		windowicon.Size = UDim2.new(0, argstablemain["IconSize"], 0, 16)
-		windowicon.Image = shared.downloadFromGithub(argstablemain["Icon"])
+		windowicon.Image = downloadVapeAsset(argstablemain["Icon"])
 		windowicon.Name = "WindowIcon"
 		windowicon.BackgroundTransparency = 1
 		windowicon.Position = UDim2.new(0, 10, 0, 13)
@@ -1711,7 +2115,7 @@ if shared.flashExecuted then
 		local expandbutton = Instance.new("ImageButton")
 		expandbutton.AutoButtonColor = false
 		expandbutton.Size = UDim2.new(0, 16, 0, 16)
-		expandbutton.Image = shared.downloadFromGithub("assets/PinButton.png")
+		expandbutton.Image = downloadVapeAsset("flash/assets/PinButton.png")
 		expandbutton.ImageColor3 = Color3.fromRGB(84, 84, 84)
 		expandbutton.BackgroundTransparency = 1
 		expandbutton.Name = "PinButton" 
@@ -1723,7 +2127,7 @@ if shared.flashExecuted then
 		optionsbutton.Position = UDim2.new(1, -16, 0, 11)
 		optionsbutton.Name = "OptionsButton"
 		optionsbutton.BackgroundTransparency = 1
-		optionsbutton.Image = shared.downloadFromGithub("assets/MoreButton3.png")
+		optionsbutton.Image = downloadVapeAsset("flash/assets/MoreButton3.png")
 		optionsbutton.Parent = windowtitle
 		local children = Instance.new("Frame")
 		children.BackgroundTransparency = 1
@@ -1875,7 +2279,7 @@ if shared.flashExecuted then
 			slider3.Size = UDim2.new(0, 24, 0, 16)
 			slider3.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 			slider3.BorderSizePixel = 0
-			slider3.Image = shared.downloadFromGithub("assets/SliderButton1.png")
+			slider3.Image = downloadVapeAsset("flash/assets/SliderButton1.png")
 			slider3.Position = UDim2.new(1, -11, 0, -7)
 			slider3.Parent = slider2
 			slider3.Name = "ButtonSlider"
@@ -2038,7 +2442,7 @@ if shared.flashExecuted then
 			targeticon.Size = UDim2.new(0, 14, 0, 12)
 			targeticon.Position = UDim2.new(0, 12, 0, 14)
 			targeticon.BackgroundTransparency = 1
-			targeticon.Image = shared.downloadFromGithub("assets/CircleList"..(argstablemain3["Type"] == "Blacklist" and "Blacklist" or "Whitelist")..".png")
+			targeticon.Image = downloadVapeAsset("flash/assets/CircleList"..(argstablemain3["Type"] == "Blacklist" and "Blacklist" or "Whitelist")..".png")
 			targeticon.ZIndex = 2
 			targeticon.Parent = drop1
 			local targettext = Instance.new("TextLabel")
@@ -2083,7 +2487,7 @@ if shared.flashExecuted then
 			local windowshadow = Instance.new("ImageLabel")
 			windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 			windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-			windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
+			windowshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
 			windowshadow.BackgroundTransparency = 1
 			windowshadow.ZIndex = -1
 			windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -2093,7 +2497,7 @@ if shared.flashExecuted then
 			windowshadow.Parent = windowtitle
 			local windowicon = Instance.new("ImageLabel")
 			windowicon.Size = UDim2.new(0, 18, 0, 16)
-			windowicon.Image = shared.downloadFromGithub("assets/CircleList"..(argstablemain3["Type"] == "Blacklist" and "Blacklist" or "Whitelist")..".png")
+			windowicon.Image = downloadVapeAsset("flash/assets/CircleList"..(argstablemain3["Type"] == "Blacklist" and "Blacklist" or "Whitelist")..".png")
 			windowicon.ImageColor3 = Color3.fromRGB(200, 200, 200)
 			windowicon.ZIndex = 3
 			windowicon.Name = "WindowIcon"
@@ -2164,7 +2568,7 @@ if shared.flashExecuted then
 				textboxbkg.Position = UDim2.new(0, 10, 0, 5)
 				textboxbkg.ZIndex = 6
 				textboxbkg.ClipsDescendants = true
-				textboxbkg.Image = shared.downloadFromGithub((argstable["Name"] == "ProfilesList" and "assets/TextBoxBKG2.png" or "assets/TextBoxBKG.png"))
+				textboxbkg.Image = downloadVapeAsset((argstable["Name"] == "ProfilesList" and "flash/assets/TextBoxBKG2.png" or "flash/assets/TextBoxBKG.png"))
 				textboxbkg.Parent = frame
 				local textbox = Instance.new("TextBox")
 				textbox.Size = UDim2.new(0, 159, 1, 0)
@@ -2189,7 +2593,7 @@ if shared.flashExecuted then
 				addbutton.AutoButtonColor = false
 				addbutton.Size = UDim2.new(0, 16, 0, 16)
 				addbutton.ImageColor3 = argstable["Color"]
-				addbutton.Image = shared.downloadFromGithub("assets/AddItem.png")
+				addbutton.Image = downloadVapeAsset("flash/assets/AddItem.png")
 				addbutton.Parent = textboxbkg
 				local scrollframebkg = Instance.new("Frame")
 				scrollframebkg.ZIndex = 5
@@ -2296,7 +2700,7 @@ if shared.flashExecuted then
 						deletebutton.BackgroundTransparency = 1
 						deletebutton.AutoButtonColor = false
 						deletebutton.ZIndex = 5
-						deletebutton.Image = shared.downloadFromGithub("assets/AddRemoveIcon1.png")
+						deletebutton.Image = downloadVapeAsset("flash/assets/AddRemoveIcon1.png")
 						deletebutton.Position = UDim2.new(1, -16, 0, 14)
 						deletebutton.Parent = itemframe
 						deletebutton.MouseButton1Click:Connect(function()
@@ -2357,14 +2761,14 @@ if shared.flashExecuted then
 				buttonimage.BackgroundTransparency = 1
 				buttonimage.Position = UDim2.new(0, 14, 0, 7)
 				buttonimage.Size = UDim2.new(0, argstable["IconSize"], 0, 16)
-				buttonimage.Image = shared.downloadFromGithub(argstable["Icon"])
+				buttonimage.Image = downloadVapeAsset(argstable["Icon"])
 				buttonimage.ImageColor3 = Color3.fromRGB(121, 121, 121)
 				buttonimage.ZIndex = 5
 				buttonimage.Active = false
 				buttonimage.Parent = buttontext
 				local buttontexticon = Instance.new("ImageLabel")
 				buttontexticon.Size = UDim2.new(0, argstable["IconSize"] - 3, 0, 12)
-				buttontexticon.Image = shared.downloadFromGithub(argstable["Icon"])
+				buttontexticon.Image = downloadVapeAsset(argstable["Icon"])
 				buttontexticon.LayoutOrder = amount
 				buttontexticon.ZIndex = 4
 				buttontexticon.BackgroundTransparency = 1
@@ -2461,7 +2865,7 @@ if shared.flashExecuted then
 			local expandbutton2 = Instance.new("ImageLabel")
 			expandbutton2.Active = false
 			expandbutton2.Size = UDim2.new(0, 9, 0, 4)
-			expandbutton2.Image = shared.downloadFromGithub("assets/DownArrow.png")
+			expandbutton2.Image = downloadVapeAsset("flash/assets/DownArrow.png")
 			expandbutton2.ZIndex = 5
 			expandbutton2.Position = UDim2.new(1, -19, 1, -16)
 			expandbutton2.Name = "ExpandButton2"
@@ -2477,7 +2881,7 @@ if shared.flashExecuted then
 			drop1:GetPropertyChangedSignal("Text"):Connect(function()
 				drop2.Text = drop1.Text
 			end)
-			drop2.ExpandButton2.Image = shared.downloadFromGithub("assets/UpArrow.png")
+			drop2.ExpandButton2.Image = downloadVapeAsset("flash/assets/UpArrow.png")
 			local thing = Instance.new("Frame")
 			thing.Size = UDim2.new(1, 2, 1, 2)
 			thing.BorderSizePixel = 0
@@ -2652,7 +3056,7 @@ if shared.flashExecuted then
 			slider3.Size = UDim2.new(0, 24, 0, 16)
 			slider3.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 			slider3.BorderSizePixel = 0
-			slider3.Image = shared.downloadFromGithub("assets/SliderButton1.png")
+			slider3.Image = downloadVapeAsset("flash/assets/SliderButton1.png")
 			slider3.Position = UDim2.new(0.44, -11, 0, -7)
 			slider3.Parent = slider1
 			slider3.Name = "ButtonSlider"
@@ -2678,7 +3082,7 @@ if shared.flashExecuted then
 							else
 								coroutine.yield(heh)
 							end
-						until sliderapi["RainbowValue"] == false or shared.VapeExecuted == nil
+						until sliderapi["RainbowValue"] == false or shared.FlashExecuted == nil
 					end))
 				end
 			end
@@ -2782,7 +3186,7 @@ if shared.flashExecuted then
 			buttonarrow.Position = UDim2.new(0, 0, 1, -4)
 			buttonarrow.BackgroundTransparency = 1
 			buttonarrow.Name = "ToggleArrow"
-			buttonarrow.Image = shared.downloadFromGithub("assets/ToggleArrow.png")
+			buttonarrow.Image = downloadVapeAsset("flash/assets/ToggleArrow.png")
 			buttonarrow.Visible = false
 			buttonarrow.Parent = buttontext
 			local toggleframe1 = Instance.new("Frame")
@@ -2901,7 +3305,7 @@ if shared.flashExecuted then
 		local windowshadow = Instance.new("ImageLabel")
 		windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 		windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-		windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
+		windowshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
 		windowshadow.BackgroundTransparency = 1
 		windowshadow.ZIndex = -1
 		windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -2911,7 +3315,7 @@ if shared.flashExecuted then
 		windowshadow.Parent = windowtitle
 		local windowicon = Instance.new("ImageLabel")
 		windowicon.Size = UDim2.new(0, argstablemain2["IconSize"], 0, 16)
-		windowicon.Image = shared.downloadFromGithub(argstablemain2["Icon"])
+		windowicon.Image = downloadVapeAsset(argstablemain2["Icon"])
 		windowicon.Name = "WindowIcon"
 		windowicon.BackgroundTransparency = 1
 		windowicon.Position = UDim2.new(0, 10, 0, 13)
@@ -2927,7 +3331,7 @@ if shared.flashExecuted then
 				currentexpandedbutton["ExpandToggle"]()
 			end
 		end)
-		windowbackbutton.Image = shared.downloadFromGithub("assets/BackIcon.png")
+		windowbackbutton.Image = downloadVapeAsset("flash/assets/BackIcon.png")
 		windowbackbutton.Parent = windowtitle
 		local windowtext = Instance.new("TextLabel")
 		windowtext.Size = UDim2.new(0, 155, 0, 41)
@@ -2952,7 +3356,7 @@ if shared.flashExecuted then
 		local expandbutton2 = Instance.new("ImageLabel")
 		expandbutton2.Active = false
 		expandbutton2.Size = UDim2.new(0, 9, 0, 4)
-		expandbutton2.Image = shared.downloadFromGithub("assets/UpArrow.png")
+		expandbutton2.Image = downloadVapeAsset("flash/assets/UpArrow.png")
 		expandbutton2.Position = UDim2.new(0, 8, 0, 6)
 		expandbutton2.Name = "ExpandButton2"
 		expandbutton2.BackgroundTransparency = 1
@@ -2992,11 +3396,11 @@ if shared.flashExecuted then
 			if noexpand == false then
 				children.Visible = not children.Visible
 				if children.Visible then
-					expandbutton2.Image = shared.downloadFromGithub("assets/DownArrow.png")
+					expandbutton2.Image = downloadVapeAsset("flash/assets/DownArrow.png")
 					windowtitle.Size = UDim2.new(0, 220, 0, math.clamp(45 + uilistlayout.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale), 0, 605))
 					children.CanvasSize = UDim2.new(0, 0, 0, uilistlayout.AbsoluteContentSize.Y * (1 / GuiLibrary["MainRescale"].Scale))
 				else
-					expandbutton2.Image = shared.downloadFromGithub("assets/UpArrow.png")
+					expandbutton2.Image = downloadVapeAsset("flash/assets/UpArrow.png")
 					windowtitle.Size = UDim2.new(0, 220, 0, 41)
 				end
 			end
@@ -3032,7 +3436,7 @@ if shared.flashExecuted then
 			button2.Size = UDim2.new(0, 10, 0, 20)
 			button2.Position = UDim2.new(1, -24, 0, 10)
 			button2.Name = "OptionsButton"
-			button2.Image = shared.downloadFromGithub("assets/MoreButton1.png")
+			button2.Image = downloadVapeAsset("flash/assets/MoreButton1.png")
 			button2.Parent = button
 			local buttontext = Instance.new("TextLabel")
 			buttontext.BackgroundTransparency = 1
@@ -3081,7 +3485,7 @@ if shared.flashExecuted then
 			bindbkg2.TextColor3 = Color3.fromRGB(88, 88, 88)
 			bindbkg2.Parent = button
 			local bindimg = Instance.new("ImageLabel")
-			bindimg.Image = shared.downloadFromGithub("assets/KeybindIcon.png")
+			bindimg.Image = downloadVapeAsset("flash/assets/KeybindIcon.png")
 			bindimg.BackgroundTransparency = 1
 			bindimg.ImageColor3 = Color3.fromRGB(88, 88, 88)
 			bindimg.Size = UDim2.new(0, 12, 0, 12)
@@ -3100,7 +3504,7 @@ if shared.flashExecuted then
 			bindtext.Visible = false
 			local bindtext2 = Instance.new("ImageLabel")
 			bindtext2.Size = UDim2.new(0, 156, 0, 39)
-			bindtext2.Image = shared.downloadFromGithub("assets/BindBackground.png")
+			bindtext2.Image = downloadVapeAsset("flash/assets/BindBackground.png")
 			bindtext2.BackgroundTransparency = 1
 			bindtext2.ScaleType = Enum.ScaleType.Slice
 			bindtext2.SliceCenter = Rect.new(0, 0, 140, 40)
@@ -3170,20 +3574,20 @@ if shared.flashExecuted then
 					button.BackgroundColor3 = Color3.fromHSV(GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Hue"], GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Sat"], GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"]["Api"]["Value"])
 					currenttween:Cancel()
 					buttonactiveborder.Visible = true
-					button2.Image = shared.downloadFromGithub("assets/MoreButton2.png")
+					button2.Image = downloadVapeAsset("flash/assets/MoreButton2.png")
 					buttontext.TextColor3 = Color3.new(0, 0, 0)
 					bindbkg.BackgroundTransparency = 0.9
 					bindtext.TextColor3 = Color3.fromRGB(45, 45, 45)
 					bindimg.ImageColor3 = Color3.fromRGB(45, 45, 45)
 				else
 					for i, v in pairs(buttonapi.Connections) do
-						if v.Disconnect then pcall(function() v:Disconnect() end) end
-						if v.disconnect then pcall(function() v:disconnect() end) end
+						if v.Disconnect then pcall(function() v:Disconnect() end) continue end
+						if v.disconnect then pcall(function() v:disconnect() end) continue end
 					end
 					table.clear(buttonapi.Connections)
 					button.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 					buttonactiveborder.Visible = false
-					button2.Image = shared.downloadFromGithub("assets/MoreButton1.png")
+					button2.Image = downloadVapeAsset("flash/assets/MoreButton1.png")
 					buttontext.TextColor3 = Color3.fromRGB(162, 162, 162)
 					bindbkg.BackgroundTransparency = 0.95
 					bindtext.TextColor3 = Color3.fromRGB(88, 88, 88)
@@ -3242,7 +3646,7 @@ if shared.flashExecuted then
 				textboxbkg.Size = UDim2.new(0, 200, 0, 31)
 				textboxbkg.Position = UDim2.new(0, 10, 0, 5)
 				textboxbkg.ClipsDescendants = true
-				textboxbkg.Image = shared.downloadFromGithub("assets/TextBoxBKG.png")
+				textboxbkg.Image = downloadVapeAsset("flash/assets/TextBoxBKG.png")
 				textboxbkg.Parent = frame
 				local textbox = Instance.new("TextBox")
 				textbox.Size = UDim2.new(0, 159, 1, 0)
@@ -3265,7 +3669,7 @@ if shared.flashExecuted then
 				addbutton.AutoButtonColor = false
 				addbutton.Size = UDim2.new(0, 16, 0, 16)
 				addbutton.ImageColor3 = Color3.fromHSV(0.44, 1, 1)
-				addbutton.Image = shared.downloadFromGithub("assets/AddItem.png")
+				addbutton.Image = downloadVapeAsset("flash/assets/AddItem.png")
 				addbutton.Parent = textboxbkg
 				local scrollframebkg = Instance.new("Frame")
 				scrollframebkg.ZIndex = 2
@@ -3330,7 +3734,7 @@ if shared.flashExecuted then
 						deletebutton.BackgroundTransparency = 1
 						deletebutton.AutoButtonColor = false
 						deletebutton.ZIndex = 1
-						deletebutton.Image = shared.downloadFromGithub("assets/AddRemoveIcon1.png")
+						deletebutton.Image = downloadVapeAsset("flash/assets/AddRemoveIcon1.png")
 						deletebutton.Position = UDim2.new(1, -16, 0, 14)
 						deletebutton.Parent = itemframe
 						deletebutton.MouseButton1Click:Connect(function()
@@ -3383,7 +3787,7 @@ if shared.flashExecuted then
 				textboxbkg.Size = UDim2.new(0, 200, 0, 31)
 				textboxbkg.Position = UDim2.new(0, 10, 0, 5)
 				textboxbkg.ClipsDescendants = true
-				textboxbkg.Image = shared.downloadFromGithub("assets/TextBoxBKG.png")
+				textboxbkg.Image = downloadVapeAsset("flash/assets/TextBoxBKG.png")
 				textboxbkg.Parent = frame
 				local textbox = Instance.new("TextBox")
 				textbox.Size = UDim2.new(0, 159, 1, 0)
@@ -3495,7 +3899,7 @@ if shared.flashExecuted then
 				local windowshadow = Instance.new("ImageLabel")
 				windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 				windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-				windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
+				windowshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
 				windowshadow.BackgroundTransparency = 1
 				windowshadow.ZIndex = -1
 				windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -3505,7 +3909,7 @@ if shared.flashExecuted then
 				windowshadow.Parent = windowtitle
 				local windowicon = Instance.new("ImageLabel")
 				windowicon.Size = UDim2.new(0, 18, 0, 16)
-				windowicon.Image = shared.downloadFromGithub("assets/TargetIcon.png")
+				windowicon.Image = downloadVapeAsset("flash/assets/TargetIcon.png")
 				windowicon.ImageColor3 = Color3.fromRGB(200, 200, 200)
 				windowicon.ZIndex = 3
 				windowicon.Name = "WindowIcon"
@@ -3583,7 +3987,7 @@ if shared.flashExecuted then
 					buttonarrow.BackgroundTransparency = 1
 					buttonarrow.Name = "ToggleArrow"
 					buttonarrow.ZIndex = 3
-					buttonarrow.Image = shared.downloadFromGithub("assets/ToggleArrow.png")
+					buttonarrow.Image = downloadVapeAsset("flash/assets/ToggleArrow.png")
 					buttonarrow.Visible = false
 					buttonarrow.Parent = buttontext
 					local toggleframe1 = Instance.new("Frame")
@@ -3690,14 +4094,14 @@ if shared.flashExecuted then
 					buttonimage.BackgroundTransparency = 1
 					buttonimage.Position = UDim2.new(0, 14, 0, 7)
 					buttonimage.Size = UDim2.new(0, argstable["IconSize"], 0, 16)
-					buttonimage.Image = shared.downloadFromGithub(argstable["Icon"])
+					buttonimage.Image = downloadVapeAsset(argstable["Icon"])
 					buttonimage.ImageColor3 = Color3.fromRGB(121, 121, 121)
 					buttonimage.ZIndex = 5
 					buttonimage.Active = false
 					buttonimage.Parent = buttontext
 					local buttontexticon = Instance.new("ImageLabel")
 					buttontexticon.Size = UDim2.new(0, argstable["IconSize"] - 3, 0, 12)
-					buttontexticon.Image = shared.downloadFromGithub(argstable["Icon"])
+					buttontexticon.Image = downloadVapeAsset(argstable["Icon"])
 					buttontexticon.LayoutOrder = amount
 					buttontexticon.ZIndex = 4
 					buttontexticon.BackgroundTransparency = 1
@@ -3743,7 +4147,7 @@ if shared.flashExecuted then
 				buttonreturned["Players"] = windowapi["CreateButton"]({
 					["Name"] = "PlayersIcon",
 					["Position"] = UDim2.new(0, 11, 0, 6),
-					["Icon"] = "assets/TargetIcon1.png",
+					["Icon"] = "flash/assets/TargetIcon1.png",
 					["IconSize"] = 15,
 					["Function"] = function() end,
 					["Default"] = true
@@ -3751,7 +4155,7 @@ if shared.flashExecuted then
 				buttonreturned["NPCs"] = windowapi["CreateButton"]({
 					["Name"] = "NPCsIcon",
 					["Position"] = UDim2.new(0, 62, 0, 6),
-					["Icon"] = "assets/TargetIcon2.png",
+					["Icon"] = "flash/assets/TargetIcon2.png",
 					["IconSize"] = 12,
 					["Function"] = function() end,
 					["Default"] = false
@@ -3759,7 +4163,7 @@ if shared.flashExecuted then
 				buttonreturned["Peaceful"] = windowapi["CreateButton"]({
 					["Name"] = "PeacefulIcon",
 					["Position"] = UDim2.new(0, 113, 0, 6),
-					["Icon"] = "assets/TargetIcon3.png",
+					["Icon"] = "flash/assets/TargetIcon3.png",
 					["IconSize"] = 16,
 					["Function"] = function() end,
 					["Default"] = false
@@ -3767,7 +4171,7 @@ if shared.flashExecuted then
 				buttonreturned["Neutral"] = windowapi["CreateButton"]({
 					["Name"] = "NeutralIcon",
 					["Position"] = UDim2.new(0, 164, 0, 6),
-					["Icon"] = "assets/TargetIcon4.png",
+					["Icon"] = "flash/assets/TargetIcon4.png",
 					["IconSize"] = 19,
 					["Function"] = function() end,
 					["Default"] = false
@@ -3837,7 +4241,7 @@ if shared.flashExecuted then
 				targeticon.Size = UDim2.new(0, 14, 0, 12)
 				targeticon.Position = UDim2.new(0, 12, 0, 14)
 				targeticon.BackgroundTransparency = 1
-				targeticon.Image = shared.downloadFromGithub("assets/CircleList"..(argstablemain3["Type"] == "Blacklist" and "Blacklist" or "Whitelist")..".png")
+				targeticon.Image = downloadVapeAsset("flash/assets/CircleList"..(argstablemain3["Type"] == "Blacklist" and "Blacklist" or "Whitelist")..".png")
 				targeticon.ZIndex = 2
 				targeticon.Parent = drop1
 				local targettext = Instance.new("TextLabel")
@@ -3882,7 +4286,7 @@ if shared.flashExecuted then
 				local windowshadow = Instance.new("ImageLabel")
 				windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 				windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-				windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
+				windowshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
 				windowshadow.BackgroundTransparency = 1
 				windowshadow.ZIndex = -1
 				windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -3892,7 +4296,7 @@ if shared.flashExecuted then
 				windowshadow.Parent = windowtitle
 				local windowicon = Instance.new("ImageLabel")
 				windowicon.Size = UDim2.new(0, 18, 0, 16)
-				windowicon.Image = shared.downloadFromGithub("assets/CircleList"..(argstablemain3["Type"] == "Blacklist" and "Blacklist" or "Whitelist")..".png")
+				windowicon.Image = downloadVapeAsset("flash/assets/CircleList"..(argstablemain3["Type"] == "Blacklist" and "Blacklist" or "Whitelist")..".png")
 				windowicon.ImageColor3 = Color3.fromRGB(200, 200, 200)
 				windowicon.ZIndex = 3
 				windowicon.Name = "WindowIcon"
@@ -3963,7 +4367,7 @@ if shared.flashExecuted then
 					textboxbkg.Position = UDim2.new(0, 10, 0, 5)
 					textboxbkg.ZIndex = 6
 					textboxbkg.ClipsDescendants = true
-					textboxbkg.Image = shared.downloadFromGithub((argstable["Name"] == "ProfilesList" and "assets/TextBoxBKG2.png" or "assets/TextBoxBKG.png"))
+					textboxbkg.Image = downloadVapeAsset((argstable["Name"] == "ProfilesList" and "flash/assets/TextBoxBKG2.png" or "flash/assets/TextBoxBKG.png"))
 					textboxbkg.Parent = frame
 					local textbox = Instance.new("TextBox")
 					textbox.Size = UDim2.new(0, 159, 1, 0)
@@ -3988,7 +4392,7 @@ if shared.flashExecuted then
 					addbutton.AutoButtonColor = false
 					addbutton.Size = UDim2.new(0, 16, 0, 16)
 					addbutton.ImageColor3 = argstable["Color"]
-					addbutton.Image = shared.downloadFromGithub("assets/AddItem.png")
+					addbutton.Image = downloadVapeAsset("flash/assets/AddItem.png")
 					addbutton.Parent = textboxbkg
 					local scrollframebkg = Instance.new("Frame")
 					scrollframebkg.ZIndex = 5
@@ -4095,7 +4499,7 @@ if shared.flashExecuted then
 							deletebutton.BackgroundTransparency = 1
 							deletebutton.AutoButtonColor = false
 							deletebutton.ZIndex = 5
-							deletebutton.Image = shared.downloadFromGithub("assets/AddRemoveIcon1.png")
+							deletebutton.Image = downloadVapeAsset("flash/assets/AddRemoveIcon1.png")
 							deletebutton.Position = UDim2.new(1, -16, 0, 14)
 							deletebutton.Parent = itemframe
 							deletebutton.MouseButton1Click:Connect(function()
@@ -4156,14 +4560,14 @@ if shared.flashExecuted then
 					buttonimage.BackgroundTransparency = 1
 					buttonimage.Position = UDim2.new(0, 14, 0, 7)
 					buttonimage.Size = UDim2.new(0, argstable["IconSize"], 0, 16)
-					buttonimage.Image = shared.downloadFromGithub(argstable["Icon"])
+					buttonimage.Image = downloadVapeAsset(argstable["Icon"])
 					buttonimage.ImageColor3 = Color3.fromRGB(121, 121, 121)
 					buttonimage.ZIndex = 5
 					buttonimage.Active = false
 					buttonimage.Parent = buttontext
 					local buttontexticon = Instance.new("ImageLabel")
 					buttontexticon.Size = UDim2.new(0, argstable["IconSize"] - 3, 0, 12)
-					buttontexticon.Image = shared.downloadFromGithub(argstable["Icon"])
+					buttontexticon.Image = downloadVapeAsset(argstable["Icon"])
 					buttontexticon.LayoutOrder = amount
 					buttontexticon.ZIndex = 4
 					buttontexticon.BackgroundTransparency = 1
@@ -4260,7 +4664,7 @@ if shared.flashExecuted then
 				local expandbutton2 = Instance.new("ImageLabel")
 				expandbutton2.Active = false
 				expandbutton2.Size = UDim2.new(0, 9, 0, 4)
-				expandbutton2.Image = shared.downloadFromGithub("assets/DownArrow.png")
+				expandbutton2.Image = downloadVapeAsset("flash/assets/DownArrow.png")
 				expandbutton2.ZIndex = 5
 				expandbutton2.Position = UDim2.new(1, -19, 1, -16)
 				expandbutton2.Name = "ExpandButton2"
@@ -4276,7 +4680,7 @@ if shared.flashExecuted then
 				drop1:GetPropertyChangedSignal("Text"):Connect(function()
 					drop2.Text = drop1.Text
 				end)
-				drop2.ExpandButton2.Image = shared.downloadFromGithub("assets/UpArrow.png")
+				drop2.ExpandButton2.Image = downloadVapeAsset("flash/assets/UpArrow.png")
 				drop2.ExpandButton2.ZIndex = 10
 				local thing = Instance.new("Frame")
 				thing.Size = UDim2.new(1, 2, 1, 2)
@@ -4459,7 +4863,7 @@ if shared.flashExecuted then
 				slider3.Size = UDim2.new(0, 24, 0, 16)
 				slider3.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 				slider3.BorderSizePixel = 0
-				slider3.Image = shared.downloadFromGithub("assets/SliderButton1.png")
+				slider3.Image = downloadVapeAsset("flash/assets/SliderButton1.png")
 				slider3.Position = UDim2.new(0.44, -11, 0, -7)
 				slider3.Parent = slider1
 				slider3.Name = "ButtonSlider"
@@ -4490,13 +4894,13 @@ if shared.flashExecuted then
 				sliderexpand.Size = UDim2.new(0, 15, 0, 15)
 				sliderexpand.BackgroundTransparency = 1
 				sliderexpand.Position = UDim2.new(0, textService:GetTextSize(text1.Text, text1.TextSize, text1.Font, Vector2.new(10000, 100000)).X + 3, 0, 6)
-				sliderexpand.Image = shared.downloadFromGithub("assets/HoverArrow3.png")
+				sliderexpand.Image = downloadVapeAsset("flash/assets/HoverArrow3.png")
 				sliderexpand.Parent = frame
 				sliderexpand.MouseEnter:Connect(function()
-					sliderexpand.Image = shared.downloadFromGithub("assets/HoverArrow4.png")
+					sliderexpand.Image = downloadVapeAsset("flash/assets/HoverArrow4.png")
 				end)
 				sliderexpand.MouseLeave:Connect(function()
-					sliderexpand.Image = shared.downloadFromGithub("assets/HoverArrow3.png")
+					sliderexpand.Image = downloadVapeAsset("flash/assets/HoverArrow3.png")
 				end)
 				sliderexpand.MouseButton1Click:Connect(function()
 					local val = not slidersat.Visible
@@ -4536,7 +4940,7 @@ if shared.flashExecuted then
 								else
 									coroutine.yield(heh)
 								end
-							until sliderapi["RainbowValue"] == false or shared.VapeExecuted == nil
+							until sliderapi["RainbowValue"] == false or shared.FlashExecuted == nil
 						end))
 					end
 				end
@@ -4684,7 +5088,7 @@ if shared.flashExecuted then
 				slider3.Size = UDim2.new(0, 24, 0, 16)
 				slider3.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 				slider3.BorderSizePixel = 0
-				slider3.Image = shared.downloadFromGithub("assets/SliderButton1.png")
+				slider3.Image = downloadVapeAsset("flash/assets/SliderButton1.png")
 				slider3.Position = UDim2.new(1, -11, 0, -7)
 				slider3.Parent = slider2
 				slider3.Name = "ButtonSlider"
@@ -4808,7 +5212,7 @@ if shared.flashExecuted then
 				text3.Parent = frame
 				local text4 = Instance.new("ImageLabel")
 				text4.Size = UDim2.new(0, 12, 0, 6)
-				text4.Image = shared.downloadFromGithub("assets/SliderArrowSeperator.png")
+				text4.Image = downloadVapeAsset("flash/assets/SliderArrowSeperator.png")
 				text4.BackgroundTransparency = 1
 				text4.Position = UDim2.new(0, 154, 0, 10)
 				text4.Parent = frame
@@ -4830,7 +5234,7 @@ if shared.flashExecuted then
 				slider3.Size = UDim2.new(0, 15, 0, 16)
 				slider3.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 				slider3.BorderSizePixel = 0
-				slider3.Image = shared.downloadFromGithub("assets/SliderArrow1.png")
+				slider3.Image = downloadVapeAsset("flash/assets/SliderArrow1.png")
 				slider3.Position = UDim2.new(1, -7, 1, -9)
 				slider3.Parent = slider1
 				slider3.Name = "ButtonSlider"
@@ -4945,7 +5349,7 @@ if shared.flashExecuted then
 				buttonarrow.Position = UDim2.new(0, 0, 1, -4)
 				buttonarrow.BackgroundTransparency = 1
 				buttonarrow.Name = "ToggleArrow"
-				buttonarrow.Image = shared.downloadFromGithub("assets/ToggleArrow.png")
+				buttonarrow.Image = downloadVapeAsset("flash/assets/ToggleArrow.png")
 				buttonarrow.Visible = false
 				buttonarrow.Parent = buttontext
 				local toggleframe1 = Instance.new("Frame")
@@ -4985,8 +5389,8 @@ if shared.flashExecuted then
 						toggleframe2:TweenPosition(UDim2.new(0, 12, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, 0.1, true)
 					else
 						for i, v in pairs(buttonapi.Connections) do
-							if v.Disconnect then pcall(function() v:Disconnect() end) end
-							if v.disconnect then pcall(function() v:disconnect() end) end
+							if v.Disconnect then pcall(function() v:Disconnect() end) continue end
+							if v.disconnect then pcall(function() v:disconnect() end) continue end
 						end
 						table.clear(buttonapi.Connections)
 						if not first then
@@ -5085,14 +5489,14 @@ if shared.flashExecuted then
 				end
 			end)
 			bindbkg.MouseEnter:Connect(function() 
-				bindimg.Image = shared.downloadFromGithub("assets/PencilIcon.png") 
+				bindimg.Image = downloadVapeAsset("flash/assets/PencilIcon.png") 
 				bindimg.Visible = true
 				bindtext.Visible = false
 				bindbkg.Size = UDim2.new(0, 20, 0, 21)
 				bindbkg.Position = UDim2.new(1, -56, 0, 9)
 			end)
 			bindbkg.MouseLeave:Connect(function() 
-				bindimg.Image = shared.downloadFromGithub("assets/KeybindIcon.png")
+				bindimg.Image = downloadVapeAsset("flash/assets/KeybindIcon.png")
 				if buttonapi["Keybind"] ~= "" then
 					bindimg.Visible = false
 					bindtext.Visible = true
@@ -5150,7 +5554,7 @@ if shared.flashExecuted then
 		local windowshadow = Instance.new("ImageLabel")
 		windowshadow.AnchorPoint = Vector2.new(0.5, 0.5)
 		windowshadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-		windowshadow.Image = shared.downloadFromGithub("assets/Blur.png")
+		windowshadow.Image = downloadVapeAsset("flash/assets/WindowBlur.png")
 		windowshadow.BackgroundTransparency = 1
 		windowshadow.ZIndex = -1
 		windowshadow.Size = UDim2.new(1, 6, 1, 6)
@@ -5160,7 +5564,7 @@ if shared.flashExecuted then
 		windowshadow.Parent = windowtitle
 		local windowicon = Instance.new("ImageLabel")
 		windowicon.Size = UDim2.new(0, argstablemain["IconSize"], 0, 16)
-		windowicon.Image = shared.downloadFromGithub(argstablemain["Icon"])
+		windowicon.Image = downloadVapeAsset(argstablemain["Icon"])
 		windowicon.ImageColor3 = Color3.fromRGB(200, 200, 200)
 		windowicon.Name = "WindowIcon"
 		windowicon.BackgroundTransparency = 1
@@ -5189,7 +5593,7 @@ if shared.flashExecuted then
 		local expandbutton2 = Instance.new("ImageLabel")
 		expandbutton2.Active = false
 		expandbutton2.Size = UDim2.new(0, 9, 0, 4)
-		expandbutton2.Image = shared.downloadFromGithub("assets/UpArrow.png")
+		expandbutton2.Image = downloadVapeAsset("flash/assets/UpArrow.png")
 		expandbutton2.Position = UDim2.new(0, 8, 0, 6)
 		expandbutton2.Name = "ExpandButton2"
 		expandbutton2.BackgroundTransparency = 1
@@ -5197,7 +5601,7 @@ if shared.flashExecuted then
 		local settingsbutton = Instance.new("ImageButton")
 		settingsbutton.Active = true
 		settingsbutton.Size = UDim2.new(0, 16, 0, 16)
-		settingsbutton.Image = shared.downloadFromGithub("assets/SettingsWheel2.png")
+		settingsbutton.Image = downloadVapeAsset("flash/assets/SettingsWheel2.png")
 		settingsbutton.Position = UDim2.new(1, -53, 0, 13)
 		settingsbutton.Name = "OptionsButton"
 		settingsbutton.BackgroundTransparency = 1
@@ -5244,10 +5648,10 @@ if shared.flashExecuted then
 				children.Visible = not children.Visible
 				children2.Visible = false
 				if children.Visible then
-					expandbutton2.Image = shared.downloadFromGithub("assets/DownArrow.png")
+					expandbutton2.Image = downloadVapeAsset("flash/assets/DownArrow.png")
 					windowtitle.Size = UDim2.new(0, 220, 0, 45 + uilistlayout.AbsoluteContentSize.Y)
 				else
-					expandbutton2.Image = shared.downloadFromGithub("assets/UpArrow.png")
+					expandbutton2.Image = downloadVapeAsset("flash/assets/UpArrow.png")
 					windowtitle.Size = UDim2.new(0, 220, 0, 41)
 				end
 			end
@@ -5318,7 +5722,7 @@ if shared.flashExecuted then
 			slider3.Size = UDim2.new(0, 24, 0, 16)
 			slider3.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
 			slider3.BorderSizePixel = 0
-			slider3.Image = shared.downloadFromGithub("assets/SliderButton1.png")
+			slider3.Image = downloadVapeAsset("flash/assets/SliderButton1.png")
 			slider3.Position = UDim2.new(0.44, -11, 0, -7)
 			slider3.Parent = slider1
 			slider3.Name = "ButtonSlider"
@@ -5349,13 +5753,13 @@ if shared.flashExecuted then
 			sliderexpand.Size = UDim2.new(0, 15, 0, 15)
 			sliderexpand.BackgroundTransparency = 1
 			sliderexpand.Position = UDim2.new(0, textService:GetTextSize(text1.Text, text1.TextSize, text1.Font, Vector2.new(10000, 100000)).X + 3, 0, 6)
-			sliderexpand.Image = shared.downloadFromGithub("assets/HoverArrow.png")
+			sliderexpand.Image = downloadVapeAsset("flash/assets/HoverArrow.png")
 			sliderexpand.Parent = frame
 			sliderexpand.MouseEnter:Connect(function()
-				sliderexpand.Image = shared.downloadFromGithub("assets/HoverArrow2.png")
+				sliderexpand.Image = downloadVapeAsset("flash/assets/HoverArrow2.png")
 			end)
 			sliderexpand.MouseLeave:Connect(function()
-				sliderexpand.Image = shared.downloadFromGithub("assets/HoverArrow.png")
+				sliderexpand.Image = downloadVapeAsset("flash/assets/HoverArrow.png")
 			end)
 			sliderexpand.MouseButton1Click:Connect(function()
 				local val = not slidersat.Visible
@@ -5395,7 +5799,7 @@ if shared.flashExecuted then
 							else
 								coroutine.yield(heh)
 							end
-						until sliderapi["RainbowValue"] == false or shared.VapeExecuted == nil
+						until sliderapi["RainbowValue"] == false or shared.FlashExecuted == nil
 					end))
 				end
 			end
@@ -5492,7 +5896,7 @@ if shared.flashExecuted then
 			buttonarrow.Position = UDim2.new(0, 0, 1, -4)
 			buttonarrow.BackgroundTransparency = 1
 			buttonarrow.Name = "ToggleArrow"
-			buttonarrow.Image = shared.downloadFromGithub("assets/ToggleArrow.png")
+			buttonarrow.Image = downloadVapeAsset("flash/assets/ToggleArrow.png")
 			buttonarrow.Visible = false
 			buttonarrow.Parent = buttontext
 			local toggleframe1 = Instance.new("Frame")
@@ -5587,7 +5991,7 @@ if shared.flashExecuted then
 			textboxbkg.Size = UDim2.new(0, (argstable["Name"] == "ProfilesList" and 150 or 200), 0, 31)
 			textboxbkg.Position = UDim2.new(0, 10, 0, 5)
 			textboxbkg.ClipsDescendants = true
-			textboxbkg.Image = shared.downloadFromGithub((argstable["Name"] == "ProfilesList" and "assets/TextBoxBKG2.png" or "assets/TextBoxBKG.png"))
+			textboxbkg.Image = downloadVapeAsset((argstable["Name"] == "ProfilesList" and "flash/assets/TextBoxBKG2.png" or "flash/assets/TextBoxBKG.png"))
 			textboxbkg.Parent = frame
 			local textbox = Instance.new("TextBox")
 			textbox.Size = UDim2.new(0, 159, 1, 0)
@@ -5610,7 +6014,7 @@ if shared.flashExecuted then
 			addbutton.AutoButtonColor = false
 			addbutton.Size = UDim2.new(0, 16, 0, 16)
 			addbutton.ImageColor3 = Color3.fromHSV(0.44, 1, 1)
-			addbutton.Image = shared.downloadFromGithub("assets/AddItem.png")
+			addbutton.Image = downloadVapeAsset("flash/assets/AddItem.png")
 			addbutton.Parent = textboxbkg
 			local scrollframebkg = Instance.new("Frame")
 			scrollframebkg.ZIndex = 2
@@ -5673,7 +6077,7 @@ if shared.flashExecuted then
 					deletebutton.BackgroundTransparency = 1
 					deletebutton.AutoButtonColor = false
 					deletebutton.ZIndex = 1
-					deletebutton.Image = shared.downloadFromGithub("assets/AddRemoveIcon1.png")
+					deletebutton.Image = downloadVapeAsset("flash/assets/AddRemoveIcon1.png")
 					deletebutton.Position = UDim2.new(1, -16, 0, 14)
 					deletebutton.Parent = itemframe
 					deletebutton.MouseButton1Click:Connect(function()
@@ -5727,7 +6131,7 @@ if shared.flashExecuted then
 			textboxbkg.Size = UDim2.new(0, (argstable["Name"] == "ProfilesList" and 150 or 200), 0, 31)
 			textboxbkg.Position = UDim2.new(0, 10, 0, 5)
 			textboxbkg.ClipsDescendants = true
-			textboxbkg.Image = shared.downloadFromGithub((argstable["Name"] == "ProfilesList" and "assets/TextBoxBKG2.png" or "assets/TextBoxBKG.png"))
+			textboxbkg.Image = downloadVapeAsset((argstable["Name"] == "ProfilesList" and "flash/assets/TextBoxBKG2.png" or "flash/assets/TextBoxBKG.png"))
 			textboxbkg.Parent = frame
 			local textbox = Instance.new("TextBox")
 			textbox.Size = UDim2.new(0, 159, 1, 0)
@@ -5750,7 +6154,7 @@ if shared.flashExecuted then
 			addbutton.AutoButtonColor = false
 			addbutton.Size = UDim2.new(0, 16, 0, 16)
 			addbutton.ImageColor3 = argstable["Color"]
-			addbutton.Image = shared.downloadFromGithub("assets/AddItem.png")
+			addbutton.Image = downloadVapeAsset("flash/assets/AddItem.png")
 			addbutton.Parent = textboxbkg
 			local scrollframebkg = Instance.new("Frame")
 			scrollframebkg.ZIndex = 2
@@ -5853,7 +6257,7 @@ if shared.flashExecuted then
 					deletebutton.BackgroundTransparency = 1
 					deletebutton.AutoButtonColor = false
 					deletebutton.ZIndex = 2
-					deletebutton.Image = shared.downloadFromGithub("assets/AddRemoveIcon1.png")
+					deletebutton.Image = downloadVapeAsset("flash/assets/AddRemoveIcon1.png")
 					deletebutton.Position = UDim2.new(1, -16, 0, 14)
 					deletebutton.Parent = itemframe
 					deletebutton.MouseButton1Click:Connect(function()
@@ -5897,7 +6301,7 @@ if shared.flashExecuted then
 			local frame = Instance.new("Frame")
 			frame.Visible = false
 			frame.Position = obj.Position
-			frame.Parent = GuiLibrary["MainUi"]
+			frame.Parent = GuiLibrary["MainGui"]
 			frame:GetPropertyChangedSignal("Position"):Connect(function()
 				obj.Position = UDim2.new(obj.Position.X.Scale, obj.Position.X.Offset, frame.Position.Y.Scale, frame.Position.Y.Offset)
 			end)
@@ -5915,7 +6319,7 @@ if shared.flashExecuted then
 			local frame = Instance.new("Frame")
 			frame.Visible = false
 			frame.Position = obj.Position
-			frame.Parent = GuiLibrary["MainUi"]
+			frame.Parent = GuiLibrary["MainGui"]
 			frame:GetPropertyChangedSignal("Position"):Connect(function()
 				obj.Position = UDim2.new(frame.Position.X.Scale, frame.Position.X.Offset, obj.Position.Y.Scale, obj.Position.Y.Offset)
 			end)
@@ -5957,7 +6361,7 @@ if shared.flashExecuted then
 		image.BackgroundTransparency = 1
 		image.Name = "Frame"
 		image.ScaleType = Enum.ScaleType.Slice
-		image.Image = shared.downloadFromGithub("assets/NotificationBackground.png")
+		image.Image = downloadVapeAsset("flash/assets/NotificationBackground.png")
 		image.Size = UDim2.new(1, 61, 0, 159)
 		image.Parent = frame
 		local uicorner = Instance.new("UICorner")
@@ -5975,12 +6379,12 @@ if shared.flashExecuted then
 		frame2.ScaleType = Enum.ScaleType.Slice
 		frame2.Position = UDim2.new(0, 63, 1, -36)
 		frame2.ZIndex = 2
-		frame2.Image = shared.downloadFromGithub("assets/NotificationBar.png")
+		frame2.Image = downloadVapeAsset("flash/assets/NotificationBar.png")
 		frame2.BorderSizePixel = 0
 		frame2.Parent = image
 		local icon = Instance.new("ImageLabel")
 		icon.Name = "IconLabel"
-		icon.Image = shared.downloadFromGithub(customicon and ""..customicon or "assets/InfoNotification.png")
+		icon.Image = downloadVapeAsset(customicon and "flash/"..customicon or "flash/assets/InfoNotification.png")
 		icon.BackgroundTransparency = 1
 		icon.Position = UDim2.new(0, -6, 0, -6)
 		icon.Size = UDim2.new(0, 60, 0, 60)
@@ -6071,6 +6475,13 @@ if shared.flashExecuted then
 					end
 				end
 			end
+			for profilenametext, profiletab in pairs(GuiLibrary.Profiles) do
+				if (profiletab["Keybind"] ~= nil and profiletab["Keybind"] ~= "") and GuiLibrary["KeybindCaptured"] == false and profilenametext ~= GuiLibrary.CurrentProfile then
+					if input1.KeyCode == Enum.KeyCode[profiletab["Keybind"]] then
+						GuiLibrary["SwitchProfile"](profilenametext)
+					end
+				end
+			end
 		end
 	end)
 
@@ -6078,6 +6489,78 @@ if shared.flashExecuted then
 		if input1.KeyCode == Enum.KeyCode.RightAlt then
 			holdingalt = false
 		end
+	end)
+
+	searchbar:GetPropertyChangedSignal("Text"):Connect(function()
+		searchbarchildren:ClearAllChildren()
+		if searchbar.Text == "" then
+			searchbarmain.Size = UDim2.new(0, 220, 0, 37)
+		else
+			local optionbuttons = {}
+			for i,v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
+				if i:find("OptionsButton") and i:sub(1, searchbar.Text:len()):lower() == searchbar.Text:lower() then
+					local button = Instance.new("TextButton")
+					button.Name = v.Object.Name
+					button.AutoButtonColor = false
+					button.Active = true
+					button.Size = UDim2.new(1, 0, 0, 40)
+					button.BorderSizePixel = 0
+					button.Position = UDim2.new(0, 0, 0, 40 * #optionbuttons)
+					button.ZIndex = 10
+					button.BackgroundColor3 = v.Object.BackgroundColor3
+					button.Text = ""
+					button.LayoutOrder = amount
+					button.Parent = searchbarchildren
+					v.Object:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
+						button.BackgroundColor3 = v.Object.BackgroundColor3
+					end)
+					local buttonactiveborder = Instance.new("Frame")
+					buttonactiveborder.BackgroundTransparency = 0.75
+					buttonactiveborder.BackgroundColor3 = Color3.new(0, 0, 0)
+					buttonactiveborder.BorderSizePixel = 0
+					buttonactiveborder.Size = UDim2.new(1, 0, 0, 1)
+					buttonactiveborder.Position = UDim2.new(0, 0, 1, -1)
+					buttonactiveborder.ZIndex = 10
+					buttonactiveborder.Visible = false
+					buttonactiveborder.Parent = button
+					local button2 = Instance.new("ImageButton")
+					button2.BackgroundTransparency = 1
+					button2.Size = UDim2.new(0, 10, 0, 20)
+					button2.Position = UDim2.new(1, -24, 0, 10)
+					button2.Name = "OptionsButton"
+					button2.ZIndex = 10
+					button2.Image = v.Object.OptionsButton.Image
+					button2.Parent = button
+					v.Object.OptionsButton:GetPropertyChangedSignal("Image"):Connect(function()
+						button2.Image = v.Object.OptionsButton.Image
+					end)
+					local buttontext = Instance.new("TextLabel")
+					buttontext.BackgroundTransparency = 1
+					buttontext.Name = "ButtonText"
+					buttontext.Text = (translations[v.Object.Name:gsub("Button", "")] ~= nil and translations[v.Object.Name:gsub("Button", "")] or v.Object.Name:gsub("Button", ""))
+					buttontext.Size = UDim2.new(0, 118, 0, 39)
+					buttontext.Active = false
+					buttontext.ZIndex = 10
+					buttontext.TextColor3 = v.Object.ButtonText.TextColor3
+					v.Object.ButtonText:GetPropertyChangedSignal("TextColor3"):Connect(function()
+						buttontext.TextColor3 = v.Object.ButtonText.TextColor3
+					end)
+					buttontext.TextSize = 17
+					buttontext.Font = Enum.Font.SourceSans
+					buttontext.TextXAlignment = Enum.TextXAlignment.Left
+					buttontext.Position = UDim2.new(0, 12, 0, 0)
+					buttontext.Parent = button
+					button.MouseButton1Click:Connect(function()
+						v["Api"]["ToggleButton"](false)
+					end)
+					table.insert(optionbuttons, v)
+				end
+			end
+			searchbarmain.Size = UDim2.new(0, 220, 0, 39 + (40 * #optionbuttons))
+		end
+	end)
+	GuiLibrary["MainRescale"]:GetPropertyChangedSignal("Scale"):Connect(function()
+		searchbarmain.Position = UDim2.new(0.5 / GuiLibrary["MainRescale"].Scale, -110, 0, -23)
 	end)
 
 	return GuiLibrary
