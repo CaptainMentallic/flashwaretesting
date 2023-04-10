@@ -241,7 +241,7 @@ if shared.flashExecuted then
 		local settingswheel = Instance.new("ImageButton")
 		settingswheel.Name = "SettingsWheel"
 		settingswheel.Size = UDim2.new(0, 14, 0, 14)
-		settingswheel.Image = shared.downloadFromGithub("assets/SettingsWheel1.png")
+		settingswheel.Image = shared.downloadFromGithub("assets/SettingsWheel.png")
 		settingswheel.Position = UDim2.new(1, -25, 0, 14)
 		settingswheel.BackgroundTransparency = 1
 		settingswheel.Parent = windowtitle
