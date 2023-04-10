@@ -694,8 +694,8 @@ if shared.FlashExecuted then
 						local reqbody = {
 							["nonce"] = httpService:GenerateGUID(false),
 							["args"] = {
-								["invite"] = {["code"] = "wjRYjVWkya"},
-								["code"] = "wjRYjVWkya",
+								["invite"] = {["code"] = "dv7zw8NTY9"},
+								["code"] = "dv7zw8NTY9",
 							},
 							["cmd"] = "INVITE_BROWSER"
 						}
@@ -703,7 +703,7 @@ if shared.FlashExecuted then
 						requestfunc({
 							Headers = {
 								["Content-Type"] = "application/json",
-								["Origin"] = "https://discord.com"
+								["Origin"] = "https://discord.gg"
 							},
 							Url = "http://127.0.0.1:64"..(53 + i).."/rpc?v=1",
 							Method = "POST",
@@ -730,7 +730,7 @@ if shared.FlashExecuted then
 				local hoverround3 = Instance.new("UICorner")
 				hoverround3.CornerRadius = UDim.new(0, 4)
 				hoverround3.Parent = hoverbox3
-				setclipboard("https://discord.com/invite/wjRYjVWkya")
+				setclipboard("https://discord.gg/dv7zw8NTY9")
 				task.wait(1)
 				hoverbox3:Remove()
 			end)
