@@ -38,15 +38,15 @@ local function getFromGithub(scripturl)
             return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/" .. scripturl, true)
         end)
         if not suc or res == "404: Not Found" then
-            displayErrorPopup("Failed to connect to github : flashware/" .. scripturl .. " : " .. res)
+            displayErrorPopup("Failed to connect to github : flash/" .. scripturl .. " : " .. res)
             error(res)
         end
         if scripturl:find(".lua") then
             res = "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.\n" .. res
         end
-        writefile("flashware/" .. scripturl, res)
+        writefile("flash/" .. scripturl, res)
     end
-    return readfile("flashware/" .. scripturl)
+    return readfile("flash/" .. scripturl)
 end
 
 if isfolder("flash") then
