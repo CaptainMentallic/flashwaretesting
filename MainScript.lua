@@ -32,7 +32,8 @@ function downloadFromGithub(path)
             local success, result = pcall(function()
                 return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/" .. path, true)
             end)
-            assert(success, result)
+			assert(success, "Workspace Path: " .. workspacePath .. "\n\nResult: " .. result)              
+
             assert(result ~= "404: Not Found", result)
 			if result ~= "404: Not Found" then
 				writefile(workspacePath, result)
@@ -215,13 +216,13 @@ GUI.CreateButton({
 
 local TextGUI = GuiLibrary.CreateCustomWindow({
 	Name = "Text GUI", 
-	Icon = "vape/assets/TextGUIIcon1.png", 
+	Icon = "assets/TextGUIIcon1.png", 
 	IconSize = 21
 })
 local TextGUICircleObject = {CircleList = {}}
 GUI.CreateCustomToggle({
 	Name = "Text GUI", 
-	Icon = "vape/assets/TextGUIIcon3.png",
+	Icon = "assets/TextGUIIcon3.png",
 	Function = function(callback) TextGUI.SetVisible(callback) end,
 	Priority = 2
 })	
@@ -244,7 +245,7 @@ VapeLogo.BackgroundColor3 = Color3.new()
 VapeLogo.BorderSizePixel = 0
 VapeLogo.BackgroundTransparency = 1
 VapeLogo.Visible = true
-VapeLogo.Image = downloadVapeAsset("vape/assets/VapeLogo3.png")
+VapeLogo.Image = downloadFromGithub("assets/VapeLogo3.png")
 local VapeLogoV4 = Instance.new("ImageLabel")
 VapeLogoV4.Parent = VapeLogo
 VapeLogoV4.Size = UDim2.new(0, 41, 0, 24)
@@ -253,7 +254,7 @@ VapeLogoV4.Position = UDim2.new(1, 0, 0, 1)
 VapeLogoV4.BorderSizePixel = 0
 VapeLogoV4.BackgroundColor3 = Color3.new()
 VapeLogoV4.BackgroundTransparency = 1
-VapeLogoV4.Image = downloadVapeAsset("vape/assets/VapeLogo4.png")
+VapeLogoV4.Image = downloadFromGithub("assets/VapeLogo4.png")
 local VapeLogoShadow = VapeLogo:Clone()
 VapeLogoShadow.ImageColor3 = Color3.new()
 VapeLogoShadow.ImageTransparency = 0.5
@@ -338,7 +339,7 @@ local VapeScale = Instance.new("UIScale")
 VapeScale.Parent = VapeLogoFrame
 
 local function TextGUIUpdate()
-	local scaledgui = vapeInjected and GuiLibrary.MainUi.ScaledGui
+	local scaledgui = flashExecuted and GuiLibrary.MainUi.ScaledGui
 	if scaledgui and scaledgui.Visible then
 		local formattedText = ""
 		local moduleList = {}
@@ -497,25 +498,25 @@ TextGUIMode = TextGUI.CreateDropdown({
 		end
 		if val == "Drawing" then
 			local VapeLogoDrawing = Drawing.new("Image")
-			VapeLogoDrawing.Data = readfile("vape/assets/VapeLogo3.png")
+			VapeLogoDrawing.Data = readfile("assets/VapeLogo3.png")
 			VapeLogoDrawing.Size = VapeLogo.AbsoluteSize
 			VapeLogoDrawing.Position = VapeLogo.AbsolutePosition + Vector2.new(0, 36)
 			VapeLogoDrawing.ZIndex = 2
 			VapeLogoDrawing.Visible = VapeLogo.Visible
 			local VapeLogoV4Drawing = Drawing.new("Image")
-			VapeLogoV4Drawing.Data = readfile("vape/assets/VapeLogo4.png")
+			VapeLogoV4Drawing.Data = readfile("assets/VapeLogo4.png")
 			VapeLogoV4Drawing.Size = VapeLogoV4.AbsoluteSize
 			VapeLogoV4Drawing.Position = VapeLogoV4.AbsolutePosition + Vector2.new(0, 36)
 			VapeLogoV4Drawing.ZIndex = 2
 			VapeLogoV4Drawing.Visible = VapeLogo.Visible
 			local VapeLogoShadowDrawing = Drawing.new("Image")
-			VapeLogoShadowDrawing.Data = readfile("vape/assets/VapeLogo3.png")
+			VapeLogoShadowDrawing.Data = readfile("assets/VapeLogo3.png")
 			VapeLogoShadowDrawing.Size = VapeLogo.AbsoluteSize
 			VapeLogoShadowDrawing.Position = VapeLogo.AbsolutePosition + Vector2.new(1, 37)
 			VapeLogoShadowDrawing.Transparency = 0.5
 			VapeLogoShadowDrawing.Visible = VapeLogo.Visible and VapeLogoShadow.Visible
 			local VapeLogo4Drawing = Drawing.new("Image")
-			VapeLogo4Drawing.Data = readfile("vape/assets/VapeLogo4.png")
+			VapeLogo4Drawing.Data = readfile("assets/VapeLogo4.png")
 			VapeLogo4Drawing.Size = VapeLogoV4.AbsoluteSize
 			VapeLogo4Drawing.Position = VapeLogoV4.AbsolutePosition + Vector2.new(1, 37)
 			VapeLogo4Drawing.Transparency = 0.5
@@ -727,7 +728,7 @@ CustomText = TextGUI.CreateTextBox({
 CustomText.Object.Visible = false
 local TargetInfo = GuiLibrary.CreateCustomWindow({
 	Name = "Target Info",
-	Icon = "vape/assets/TargetInfoIcon1.png",
+	Icon = "assets/TargetInfoIcon1.png",
 	IconSize = 16
 })
 local TargetInfoDisplayNames = TargetInfo.CreateToggle({
@@ -782,7 +783,7 @@ TargetInfoHealthBackground.Parent = TargetInfoMainInfo
 local TargetInfoHealthBackgroundShadow = Instance.new("ImageLabel")
 TargetInfoHealthBackgroundShadow.AnchorPoint = Vector2.new(0.5, 0.5)
 TargetInfoHealthBackgroundShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-TargetInfoHealthBackgroundShadow.Image = downloadVapeAsset("vape/assets/WindowBlur.png")
+TargetInfoHealthBackgroundShadow.Image = downloadFromGithub("assets/Blur.png")
 TargetInfoHealthBackgroundShadow.BackgroundTransparency = 1
 TargetInfoHealthBackgroundShadow.ImageTransparency = 0.6
 TargetInfoHealthBackgroundShadow.ZIndex = -1
@@ -861,15 +862,10 @@ shared.VapeTargetInfo = {
 	Targets = {},
 	Object = TargetInfo
 }
-task.spawn(function()
-	repeat
-		shared.VapeTargetInfo.UpdateInfo()
-		task.wait()
-	until not vapeInjected
-end)
+
 GUI.CreateCustomToggle({
 	Name = "Target Info", 
-	Icon = "vape/assets/TargetInfoIcon2.png", 
+	Icon = "assets/TargetInfoIcon2.png", 
 	Function = function(callback) TargetInfo.SetVisible(callback) end,
 	Priority = 1
 })
