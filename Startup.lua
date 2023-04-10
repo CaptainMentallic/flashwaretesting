@@ -73,11 +73,11 @@ if isfolder("flash") then
                 end
             end
         end
-		writefile("flash/version", getFromGithub("version.txt"))
+		writefile("flash/version.txt", getFromGithub("version.txt"))
     end
 else
     makefolder("flash")
-    writefile("flash/version", getFromGithub("version.txt"))
+    writefile("flash/version.txt", getFromGithub("version.txt"))
 end
 
 return loadstring(getFromGithub("MainScript.lua"))()
