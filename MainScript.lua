@@ -16,6 +16,8 @@ local getcustomasset = getsynasset or getcustomasset or function(location) retur
 local queueonteleport = syn and syn.queue_on_teleport or queue_on_teleport or function() end
 
 local function displayErrorPopup(text, funclist)
+	print(text)
+	print(funclist)
 	local oldidentity = getidentity()
 	setidentity(8)
 	local ErrorPrompt = getrenv().require(game:GetService("CoreGui").RobloxGui.Modules.ErrorPrompt)
@@ -133,7 +135,7 @@ if not isfile("flash/CustomModules/cachechecked.txt") then
 		end
 	end
 	if isNotCached then
-		displayErrorPopup("flash has detected uncached files, If you have CustomModules click no, else click yes.", {No = function() end, Yes = function()
+		displayErrorPopup("Flash has detected uncached files, If you have CustomModules click no, else click yes.", {No = function() end, Yes = function()
 			for i,v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua"}) do 
 				if isfile(v) and not readfile(v):find("--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.") then
 					delfile(v)
@@ -745,7 +747,7 @@ flashLogo.BackgroundColor3 = Color3.new()
 flashLogo.BorderSizePixel = 0
 flashLogo.BackgroundTransparency = 1
 flashLogo.Visible = true
-flashLogo.Image = downloadAsset("flash/assets/vapeLogo3.png")
+flashLogo.Image = downloadAsset("flash/assets/VapeLogo3.png")
 local flashLogoV4 = Instance.new("ImageLabel")
 flashLogoV4.Parent = flashLogo
 flashLogoV4.Size = UDim2.new(0, 41, 0, 24)
@@ -754,7 +756,7 @@ flashLogoV4.Position = UDim2.new(1, 0, 0, 1)
 flashLogoV4.BorderSizePixel = 0
 flashLogoV4.BackgroundColor3 = Color3.new()
 flashLogoV4.BackgroundTransparency = 1
-flashLogoV4.Image = downloadAsset("flash/assets/vapeLogo4.png")
+flashLogoV4.Image = downloadAsset("flash/assets/VapeLogo4.png")
 local flashLogoShadow = flashLogo:Clone()
 flashLogoShadow.ImageColor3 = Color3.new()
 flashLogoShadow.ImageTransparency = 0.5
@@ -995,29 +997,29 @@ TextGUIMode = TextGUI.CreateDropdown({
 		end
 		if val == "Drawing" then
 			local flashLogoDrawing = Drawing.new("Image")
-			flashLogoDrawing.Data = readfile("flash/assets/vapeLogo3.png")
+			flashLogoDrawing.Data = readfile("flash/assets/VapeLogo3.png")
 			flashLogoDrawing.Size = flashLogo.AbsoluteSize
 			flashLogoDrawing.Position = flashLogo.AbsolutePosition + Vector2.new(0, 36)
 			flashLogoDrawing.ZIndex = 2
 			flashLogoDrawing.Visible = flashLogo.Visible
 			local flashLogoV4Drawing = Drawing.new("Image")
-			flashLogoV4Drawing.Data = readfile("flash/assets/vapeLogo4.png")
+			flashLogoV4Drawing.Data = readfile("flash/assets/VapeLogo4.png")
 			flashLogoV4Drawing.Size = flashLogoV4.AbsoluteSize
 			flashLogoV4Drawing.Position = flashLogoV4.AbsolutePosition + Vector2.new(0, 36)
 			flashLogoV4Drawing.ZIndex = 2
 			flashLogoV4Drawing.Visible = flashLogo.Visible
 			local flashLogoShadowDrawing = Drawing.new("Image")
-			flashLogoShadowDrawing.Data = readfile("flash/assets/vapeLogo3.png")
+			flashLogoShadowDrawing.Data = readfile("flash/assets/VapeLogo3.png")
 			flashLogoShadowDrawing.Size = flashLogo.AbsoluteSize
 			flashLogoShadowDrawing.Position = flashLogo.AbsolutePosition + Vector2.new(1, 37)
 			flashLogoShadowDrawing.Transparency = 0.5
 			flashLogoShadowDrawing.Visible = flashLogo.Visible and flashLogoShadow.Visible
-			local vapeLogo4Drawing = Drawing.new("Image")
-			vapeLogo4Drawing.Data = readfile("flash/assets/vapeLogo4.png")
-			vapeLogo4Drawing.Size = flashLogoV4.AbsoluteSize
-			vapeLogo4Drawing.Position = flashLogoV4.AbsolutePosition + Vector2.new(1, 37)
-			vapeLogo4Drawing.Transparency = 0.5
-			vapeLogo4Drawing.Visible = flashLogo.Visible and flashLogoShadow.Visible
+			local VapeLogo4Drawing = Drawing.new("Image")
+			VapeLogo4Drawing.Data = readfile("flash/assets/VapeLogo4.png")
+			VapeLogo4Drawing.Size = flashLogoV4.AbsoluteSize
+			VapeLogo4Drawing.Position = flashLogoV4.AbsolutePosition + Vector2.new(1, 37)
+			VapeLogo4Drawing.Transparency = 0.5
+			VapeLogo4Drawing.Visible = flashLogo.Visible and flashLogoShadow.Visible
 			local flashCustomDrawingText = Drawing.new("Text")
 			flashCustomDrawingText.Size = 30
 			flashCustomDrawingText.Text = flashCustomText.Text
@@ -1034,13 +1036,13 @@ TextGUIMode = TextGUI.CreateDropdown({
 			flashCustomDrawingShadow.Visible = flashCustomText.Visible and flashTextExtra.Visible
 			pcall(function()
 				flashLogoShadowDrawing.Color = Color3.new()
-				vapeLogo4Drawing.Color = Color3.new()
+				VapeLogo4Drawing.Color = Color3.new()
 				flashLogoDrawing.Color = flashLogoGradient.Color.Keypoints[1].Value
 			end)
 			table.insert(TextGUIObjects.Logo, flashLogoDrawing)
 			table.insert(TextGUIObjects.Logo, flashLogoV4Drawing)
 			table.insert(TextGUIObjects.Logo, flashLogoShadowDrawing)
-			table.insert(TextGUIObjects.Logo, vapeLogo4Drawing)
+			table.insert(TextGUIObjects.Logo, VapeLogo4Drawing)
 			table.insert(TextGUIObjects.Logo, flashCustomDrawingText)
 			table.insert(TextGUIObjects.Logo, flashCustomDrawingShadow)
 			table.insert(TextGUIConnections, flashLogo:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
@@ -1055,11 +1057,11 @@ TextGUIMode = TextGUI.CreateDropdown({
 			end))
 			table.insert(TextGUIConnections, flashLogoV4:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
 				flashLogoV4Drawing.Position = flashLogoV4.AbsolutePosition + Vector2.new(0, 36)
-				vapeLogo4Drawing.Position = flashLogoV4.AbsolutePosition + Vector2.new(1, 37)
+				VapeLogo4Drawing.Position = flashLogoV4.AbsolutePosition + Vector2.new(1, 37)
 			end))
 			table.insert(TextGUIConnections, flashLogoV4:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
 				flashLogoV4Drawing.Size = flashLogoV4.AbsoluteSize
-				vapeLogo4Drawing.Size = flashLogoV4.AbsoluteSize
+				VapeLogo4Drawing.Size = flashLogoV4.AbsoluteSize
 			end))
 			table.insert(TextGUIConnections, flashCustomText:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
 				flashCustomDrawingText.Position = flashCustomText.AbsolutePosition + Vector2.new(flashText.TextXAlignment == Enum.TextXAlignment.Right and (flashCustomText.AbsoluteSize.X - flashCustomDrawingText.TextBounds.X), 32)
@@ -1067,7 +1069,7 @@ TextGUIMode = TextGUI.CreateDropdown({
 			end))
 			table.insert(TextGUIConnections, flashLogoShadow:GetPropertyChangedSignal("Visible"):Connect(function()
 				flashLogoShadowDrawing.Visible = flashLogoShadow.Visible
-				vapeLogo4Drawing.Visible = flashLogoShadow.Visible
+				VapeLogo4Drawing.Visible = flashLogoShadow.Visible
 			end))
 			table.insert(TextGUIConnections, flashTextExtra:GetPropertyChangedSignal("Visible"):Connect(function()
 				for i,textdraw in pairs(TextGUIObjects.ShadowLabels) do 
@@ -1079,7 +1081,7 @@ TextGUIMode = TextGUI.CreateDropdown({
 				flashLogoDrawing.Visible = flashLogo.Visible
 				flashLogoV4Drawing.Visible = flashLogo.Visible
 				flashLogoShadowDrawing.Visible = flashLogo.Visible and flashTextExtra.Visible
-				vapeLogo4Drawing.Visible = flashLogo.Visible and flashTextExtra.Visible
+				VapeLogo4Drawing.Visible = flashLogo.Visible and flashTextExtra.Visible
 			end))
 			table.insert(TextGUIConnections, flashCustomText:GetPropertyChangedSignal("Visible"):Connect(function()
 				flashCustomDrawingText.Visible = flashCustomText.Visible
