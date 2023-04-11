@@ -1,8 +1,4 @@
---[[ 
-	Credits
-	Infinite Yield - Blink
-	Please notify me if you need credits
-]]
+-- Bedwars
 local GuiLibrary = shared.GuiLibrary
 local players = game:GetService("Players")
 local textservice = game:GetService("TextService")
