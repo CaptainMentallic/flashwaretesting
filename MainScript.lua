@@ -5,7 +5,7 @@ local FlashExecuted = true
 local oldRainbow = false
 local errorPopupShown = false
 local redownloadedAssets = false
-local profilesLoaded = false
+local ConfigsLoaded = false
 local teleportedServers = false
 local gameCamera = workspace.CurrentCamera
 local textService = game:GetService("TextService")
@@ -14,6 +14,7 @@ local setidentity = syn and syn.set_thread_identity or set_thread_identity or se
 local getidentity = syn and syn.get_thread_identity or get_thread_identity or getidentity or getthreadidentity or function() return 0 end
 local getcustomasset = getsynasset or getcustomasset or function(location) return "rbxasset://"..location end
 local queueonteleport = syn and syn.queue_on_teleport or queue_on_teleport or function() end
+local cachedfiles = "flash/cachedfiles.txt"
 
 local function displayErrorPopup(text, funclist)
 	print(text)
@@ -56,7 +57,7 @@ local function getFromGithub(scripturl)
         task.delay(15, function()
             if not res and not errorPopupShown then
                 errorPopupShown = true
-                displayErrorPopup("The connection to github is taking a while...")
+                displayErrorPopup("The connection to github is slow...")
             end
         end)
         suc, res = pcall(function()
@@ -67,7 +68,8 @@ local function getFromGithub(scripturl)
             error(res)
         end
         if scripturl:find(".lua") then
-            res = "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.\n" .. res
+            local cached = readfile(cachedfiles)
+            res = scripturl.."\n"..cached.."\n"
         end
         writefile("flash/" .. scripturl, res)
     end
@@ -103,7 +105,7 @@ end
 assert(not shared.FlashExecuted, "FlashWare Is Already Injected")
 shared.FlashExecuted = true
 
-for i,v in pairs({baseDirectory:gsub("/", ""), "flash", "flash/Libraries", "flash/CustomModules", "flash/Profiles", baseDirectory.."Profiles", "flash/assets"}) do 
+for i,v in pairs({baseDirectory:gsub("/", ""), "flash", "flash/Libraries", "flash/Games", "flash/Configs", baseDirectory.."Configs", "flash/assets"}) do 
 	if not isfolder(v) then makefolder(v) end
 end
 task.spawn(function()
@@ -120,41 +122,6 @@ task.spawn(function()
 		writefile("flash/assetsversion.txt", assetver)
 	end
 end)
-if not isfile("flash/CustomModules/cachechecked.txt") then
-	local isNotCached = false
-	for i,v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua"}) do 
-		if isfile(v) and not readfile(v):find("--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.") then
-			isNotCached = true
-		end 
-	end
-	if isfolder("flash/CustomModules") then 
-		for i,v in pairs(listfiles("flash/CustomModules")) do 
-			if isfile(v) and not readfile(v):find("--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.") then
-				isNotCached = true
-			end 
-		end
-	end
-	if isNotCached then
-		displayErrorPopup("Flash has detected uncached files, If you have CustomModules click no, else click yes.", {No = function() end, Yes = function()
-			for i,v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua"}) do 
-				if isfile(v) and not readfile(v):find("--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.") then
-					delfile(v)
-				end 
-			end
-			for i,v in pairs(listfiles("flash/CustomModules")) do 
-				if isfile(v) and not readfile(v):find("--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.") then
-					local last = v:split('\\')
-					last = last[#last]
-					local suc, publicrepo = pcall(function() return game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/flashV4ForRoblox/"..readfile("flash/commithash.txt").."/CustomModules/"..last) end)
-					if suc and publicrepo and publicrepo ~= "404: Not Found" then
-						writefile("flash/CustomModules/"..last, "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.\n"..publicrepo)
-					end
-				end 
-			end
-		end})
-	end
-	writefile("flash/CustomModules/cachechecked.txt", "verified")
-end
 
 GuiLibrary = loadstring(getFromGithub("GuiLibrary.lua"))()
 shared.GuiLibrary = GuiLibrary
@@ -190,189 +157,48 @@ task.spawn(function()
 end)
 
 local GUI = GuiLibrary.CreateMainWindow()
-local Combat = GuiLibrary.CreateWindow({
-	Name = "Combat", 
-	Icon = "flash/assets/CombatIcon.png", 
-	IconSize = 15
+local Configs = GuiLibrary.CreateTab({
+	Name = "Configs",
+	Order = 9,
+	Icon = "assets/ConfigIcon"
 })
-local Blatant = GuiLibrary.CreateWindow({
-	Name = "Blatant", 
-	Icon = "flash/assets/BlatantIcon.png", 
-	IconSize = 16
+local Settings = GuiLibrary.CreateTab({
+	Name = "Settings",
+	Order = 10,
+	Icon = "assets/SettingIcon"
 })
-local Render = GuiLibrary.CreateWindow({
-	Name = "Render", 
-	Icon = "flash/assets/RenderIcon.png", 
-	IconSize = 17
-})
-local Utility = GuiLibrary.CreateWindow({
-	Name = "Utility", 
-	Icon = "flash/assets/UtilityIcon.png", 
-	IconSize = 17
-})
-local World = GuiLibrary.CreateWindow({
-	Name = "World", 
-	Icon = "flash/assets/WorldIcon.png", 
-	IconSize = 16
-})
-local Friends = GuiLibrary.CreateWindow2({
-	Name = "Friends", 
-	Icon = "flash/assets/FriendsIcon.png", 
-	IconSize = 17
-})
-local Targets = GuiLibrary.CreateWindow2({
-	Name = "Targets", 
-	Icon = "flash/assets/FriendsIcon.png", 
-	IconSize = 17
-})
-local Profiles = GuiLibrary.CreateWindow2({
-	Name = "Profiles", 
-	Icon = "flash/assets/ProfilesIcon.png", 
-	IconSize = 19
-})
-GUI.CreateDivider()
-GUI.CreateButton({
-	Name = "Combat", 
-	Function = function(callback) Combat.SetVisible(callback) end, 
-	Icon = "flash/assets/CombatIcon.png", 
-	IconSize = 15
-})
-GUI.CreateButton({
-	Name = "Blatant", 
-	Function = function(callback) Blatant.SetVisible(callback) end, 
-	Icon = "flash/assets/BlatantIcon.png", 
-	IconSize = 16
-})
-GUI.CreateButton({
-	Name = "Render", 
-	Function = function(callback) Render.SetVisible(callback) end, 
-	Icon = "flash/assets/RenderIcon.png", 
-	IconSize = 17
-})
-GUI.CreateButton({
-	Name = "Utility", 
-	Function = function(callback) Utility.SetVisible(callback) end, 
-	Icon = "flash/assets/UtilityIcon.png", 
-	IconSize = 17
-})
-GUI.CreateButton({
-	Name = "World", 
-	Function = function(callback) World.SetVisible(callback) end, 
-	Icon = "flash/assets/WorldIcon.png", 
-	IconSize = 16
-})
-GUI.CreateDivider("MISC")
-GUI.CreateButton({
-	Name = "Friends", 
-	Function = function(callback) Friends.SetVisible(callback) end, 
-})
-GUI.CreateButton({
-	Name = "Targets", 
-	Function = function(callback) Targets.SetVisible(callback) end, 
-})
-GUI.CreateButton({
-	Name = "Profiles", 
-	Function = function(callback) Profiles.SetVisible(callback) end, 
-})
+-- local Controller = shared.GuiLibrary.Objects["GUIWindow"]["Controller"]
+-- Controller.CreateTab({})
 
-local FriendsTextListTable = {
-	Name = "FriendsList", 
-	TempText = "Username [Alias]", 
-	Color = Color3.fromRGB(5, 133, 104)
-}
-local FriendsTextList = Friends.CreateCircleTextList(FriendsTextListTable)
-FriendsTextList.FriendRefresh = Instance.new("BindableEvent")
-FriendsTextList.FriendColorRefresh = Instance.new("BindableEvent")
-local TargetsTextList = Targets.CreateCircleTextList({
-	Name = "TargetsList", 
-	TempText = "Username [Alias]", 
-	Color = Color3.fromRGB(5, 133, 104)
-})
-local oldFriendRefresh = FriendsTextList.RefreshValues
-FriendsTextList.RefreshValues = function(...)
-	FriendsTextList.FriendRefresh:Fire()
-	return oldFriendRefresh(...)
-end
-local oldTargetRefresh = TargetsTextList.RefreshValues
-TargetsTextList.RefreshValues = function(...)
-	FriendsTextList.FriendRefresh:Fire()
-	return oldTargetRefresh(...)
-end
-Friends.CreateToggle({
-	Name = "Use Friends",
-	Function = function(callback) 
-		FriendsTextList.FriendRefresh:Fire()
-	end,
-	Default = true
-})
-Friends.CreateToggle({
-	Name = "Use Alias",
-	Function = function(callback) end,
-	Default = true,
-})
-Friends.CreateToggle({
-	Name = "Spoof alias",
-	Function = function(callback) end,
-})
-local friendRecolorToggle = Friends.CreateToggle({
-	Name = "Recolor visuals",
-	Function = function(callback) FriendsTextList.FriendColorRefresh:Fire() end,
-	Default = true
-})
-local friendWindowFrame
-Friends.CreateColorSlider({
-	Name = "Friends Color", 
-	Function = function(h, s, v) 
-		local cachedColor = Color3.fromHSV(h, s, v)
-		local addCircle = FriendsTextList.Object:FindFirstChild("AddButton", true)
-		if addCircle then 
-			addCircle.ImageColor3 = cachedColor
-		end
-		friendWindowFrame = friendWindowFrame or FriendsTextList.ScrollingObject and FriendsTextList.ScrollingObject:FindFirstChild("ScrollingFrame")
-		if friendWindowFrame then 
-			for i,v in pairs(friendWindowFrame:GetChildren()) do 
-				local friendCircle = v:FindFirstChild("FriendCircle")
-				local friendText = v:FindFirstChild("ItemText")
-				if friendCircle and friendText then 
-					friendCircle.BackgroundColor3 = friendText.TextColor3 == Color3.fromRGB(160, 160, 160) and cachedColor or friendCircle.BackgroundColor3
-				end
-			end
-		end
-		FriendsTextListTable.Color = cachedColor
-		if friendRecolorToggle.Enabled then
-			FriendsTextList.FriendColorRefresh:Fire()
-		end
-	end
-})
-local ProfilesTextList = {RefreshValues = function() end}
-ProfilesTextList = Profiles.CreateTextList({
-	Name = "ProfilesList",
+local ConfigsTextList = {RefreshValues = function() end}
+ConfigsTextList = Configs.CreateTextList({
+	Name = "ConfigsList",
 	TempText = "Type name", 
 	NoSave = true,
-	AddFunction = function(profileName)
-		GuiLibrary.Profiles[profileName] = {Keybind = "", Selected = false}
-		local profiles = {}
-		for i,v in pairs(GuiLibrary.Profiles) do 
-			table.insert(profiles, i)
+	AddFunction = function(ConfigName)
+		GuiLibrary.Configs[ConfigName] = {Keybind = "", Selected = false}
+		local Configs = {}
+		for i,v in pairs(GuiLibrary.Configs) do 
+			table.insert(Configs, i)
 		end
-		table.sort(profiles, function(a, b) return b == "default" and true or a:lower() < b:lower() end)
-		ProfilesTextList.RefreshValues(profiles)
+		table.sort(Configs, function(a, b) return b == "default" and true or a:lower() < b:lower() end)
+		ConfigsTextList.RefreshValues(Configs)
 	end, 
-	RemoveFunction = function(profileIndex, profileName) 
-		if profileName ~= "default" and profileName ~= GuiLibrary.CurrentProfile then 
-			pcall(function() delfile(baseDirectory.."Profiles/"..profileName..(shared.CustomSaveflash or game.PlaceId)..".flashprofile.txt") end)
-			GuiLibrary.Profiles[profileName] = nil
+	RemoveFunction = function(ConfigIndex, ConfigName) 
+		if ConfigName ~= "default" and ConfigName ~= GuiLibrary.CurrentConfig then 
+			pcall(function() delfile(baseDirectory.."Configs/"..ConfigName..game.PlaceId..".FlashConfig.txt") end)
+			GuiLibrary.Configs[ConfigName] = nil
 		else
-			table.insert(ProfilesTextList.ObjectList, profileName)
-			ProfilesTextList.RefreshValues(ProfilesTextList.ObjectList)
+			table.insert(ConfigsTextList.ObjectList, ConfigName)
+			ConfigsTextList.RefreshValues(ConfigsTextList.ObjectList)
 		end
 	end, 
-	CustomFunction = function(profileObject, profileName) 
-		if GuiLibrary.Profiles[profileName] == nil then
-			GuiLibrary.Profiles[profileName] = {Keybind = ""}
+	CustomFunction = function(ConfigObject, ConfigName) 
+		if GuiLibrary.Configs[ConfigName] == nil then
+			GuiLibrary.Configs[ConfigName] = {Keybind = ""}
 		end
-		profileObject.MouseButton1Click:Connect(function()
-			GuiLibrary.SwitchProfile(profileName)
+		ConfigObject.MouseButton1Click:Connect(function()
+			GuiLibrary.SwitchConfig(ConfigName)
 		end)
 		local newsize = UDim2.new(0, 20, 0, 21)
 		local bindbkg = Instance.new("TextButton")
@@ -383,8 +209,8 @@ ProfilesTextList = Profiles.CreateTextList({
 		bindbkg.BorderSizePixel = 0
 		bindbkg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		bindbkg.BackgroundTransparency = 0.95
-		bindbkg.Visible = GuiLibrary.Profiles[profileName].Keybind ~= ""
-		bindbkg.Parent = profileObject
+		bindbkg.Visible = GuiLibrary.Configs[ConfigName].Keybind ~= ""
+		bindbkg.Parent = ConfigObject
 		local bindimg = Instance.new("ImageLabel")
 		bindimg.Image = downloadAsset("flash/assets/KeybindIcon.png")
 		bindimg.BackgroundTransparency = 1
@@ -392,7 +218,7 @@ ProfilesTextList = Profiles.CreateTextList({
 		bindimg.Position = UDim2.new(0, 4, 0, 5)
 		bindimg.ImageTransparency = 0.2
 		bindimg.Active = false
-		bindimg.Visible = (GuiLibrary.Profiles[profileName].Keybind == "")
+		bindimg.Visible = (GuiLibrary.Configs[ConfigName].Keybind == "")
 		bindimg.Parent = bindbkg
 		local bindtext = Instance.new("TextLabel")
 		bindtext.Active = false
@@ -402,7 +228,7 @@ ProfilesTextList = Profiles.CreateTextList({
 		bindtext.Font = Enum.Font.SourceSans
 		bindtext.Size = UDim2.new(1, 0, 1, 0)
 		bindtext.TextColor3 = Color3.fromRGB(85, 85, 85)
-		bindtext.Visible = (GuiLibrary.Profiles[profileName].Keybind ~= "")
+		bindtext.Visible = (GuiLibrary.Configs[ConfigName].Keybind ~= "")
 		local bindtext2 = Instance.new("TextLabel")
 		bindtext2.Text = "PRESS A KEY TO BIND"
 		bindtext2.Size = UDim2.new(0, 150, 0, 33)
@@ -412,7 +238,7 @@ ProfilesTextList = Profiles.CreateTextList({
 		bindtext2.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
 		bindtext2.BorderSizePixel = 0
 		bindtext2.Visible = false
-		bindtext2.Parent = profileObject
+		bindtext2.Parent = ConfigObject
 		local bindround = Instance.new("UICorner")
 		bindround.CornerRadius = UDim.new(0, 4)
 		bindround.Parent = bindbkg
@@ -422,9 +248,9 @@ ProfilesTextList = Profiles.CreateTextList({
 				task.spawn(function()
 					bindtext2.Visible = true
 					repeat task.wait() until GuiLibrary.PressedKeybindKey ~= ""
-					local key = (GuiLibrary.PressedKeybindKey == GuiLibrary.Profiles[profileName].Keybind and "" or GuiLibrary.PressedKeybindKey)
+					local key = (GuiLibrary.PressedKeybindKey == GuiLibrary.Configs[ConfigName].Keybind and "" or GuiLibrary.PressedKeybindKey)
 					if key == "" then
-						GuiLibrary.Profiles[profileName].Keybind = key
+						GuiLibrary.Configs[ConfigName].Keybind = key
 						newsize = UDim2.new(0, 20, 0, 21)
 						bindbkg.Size = newsize
 						bindbkg.Visible = true
@@ -435,7 +261,7 @@ ProfilesTextList = Profiles.CreateTextList({
 					else
 						local textsize = textService:GetTextSize(key, 16, bindtext.Font, Vector2.new(99999, 99999))
 						newsize = UDim2.new(0, 13 + textsize.X, 0, 21)
-						GuiLibrary.Profiles[profileName].Keybind = key
+						GuiLibrary.Configs[ConfigName].Keybind = key
 						bindbkg.Visible = true
 						bindbkg.Size = newsize
 						bindbkg.Position = UDim2.new(1, -(30 + newsize.X.Offset), 0, 6)
@@ -458,262 +284,36 @@ ProfilesTextList = Profiles.CreateTextList({
 		end)
 		bindbkg.MouseLeave:Connect(function() 
 			bindimg.Image = downloadAsset("flash/assets/KeybindIcon.png")
-			if GuiLibrary.Profiles[profileName].Keybind ~= "" then
+			if GuiLibrary.Configs[ConfigName].Keybind ~= "" then
 				bindimg.Visible = false
 				bindtext.Visible = true
 				bindbkg.Size = newsize
 				bindbkg.Position = UDim2.new(1, -(30 + newsize.X.Offset), 0, 6)
 			end
 		end)
-		profileObject.MouseEnter:Connect(function()
+		ConfigObject.MouseEnter:Connect(function()
 			bindbkg.Visible = true
 		end)
-		profileObject.MouseLeave:Connect(function()
-			bindbkg.Visible = GuiLibrary.Profiles[profileName] and GuiLibrary.Profiles[profileName].Keybind ~= ""
+		ConfigObject.MouseLeave:Connect(function()
+			bindbkg.Visible = GuiLibrary.Configs[ConfigName] and GuiLibrary.Configs[ConfigName].Keybind ~= ""
 		end)
-		if GuiLibrary.Profiles[profileName].Keybind ~= "" then
-			bindtext.Text = GuiLibrary.Profiles[profileName].Keybind
-			local textsize = textService:GetTextSize(GuiLibrary.Profiles[profileName].Keybind, 16, bindtext.Font, Vector2.new(99999, 99999))
+		if GuiLibrary.Configs[ConfigName].Keybind ~= "" then
+			bindtext.Text = GuiLibrary.Configs[ConfigName].Keybind
+			local textsize = textService:GetTextSize(GuiLibrary.Configs[ConfigName].Keybind, 16, bindtext.Font, Vector2.new(99999, 99999))
 			newsize = UDim2.new(0, 13 + textsize.X, 0, 21)
 			bindbkg.Size = newsize
 			bindbkg.Position = UDim2.new(1, -(30 + newsize.X.Offset), 0, 6)
 		end
-		if profileName == GuiLibrary.CurrentProfile then
-			profileObject.BackgroundColor3 = Color3.fromHSV(GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"].Api.Hue, GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"].Api.Sat, GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"].Api.Value)
-			profileObject.ImageButton.BackgroundColor3 = Color3.fromHSV(GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"].Api.Hue, GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"].Api.Sat, GuiLibrary.ObjectsThatCanBeSaved["Gui ColorSliderColor"].Api.Value)
-			profileObject.ItemText.TextColor3 = Color3.new(1, 1, 1)
-			profileObject.ItemText.TextStrokeTransparency = 0.75
+		if ConfigName == GuiLibrary.CurrentConfig then
+			ConfigObject.BackgroundColor3 = Color3.fromHSV(GuiLibrary.Objects["Gui ColorSliderColor"].Controller.Hue, GuiLibrary.Objects["Gui ColorSliderColor"].Controller.Sat, GuiLibrary.Objects["Gui ColorSliderColor"].Controller.Value)
+			ConfigObject.ImageButton.BackgroundColor3 = Color3.fromHSV(GuiLibrary.Objects["Gui ColorSliderColor"].Controller.Hue, GuiLibrary.Objects["Gui ColorSliderColor"].Controller.Sat, GuiLibrary.Objects["Gui ColorSliderColor"].Controller.Value)
+			ConfigObject.ItemText.TextColor3 = Color3.new(1, 1, 1)
+			ConfigObject.ItemText.TextStrokeTransparency = 0.75
 			bindbkg.BackgroundTransparency = 0.9
 			bindtext.TextColor3 = Color3.fromRGB(214, 214, 214)
 		end
 	end
 })
-
-local OnlineProfilesButton = Instance.new("TextButton")
-OnlineProfilesButton.Name = "OnlineProfilesButton"
-OnlineProfilesButton.LayoutOrder = 1
-OnlineProfilesButton.AutoButtonColor = false
-OnlineProfilesButton.Size = UDim2.new(0, 45, 0, 29)
-OnlineProfilesButton.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
-OnlineProfilesButton.Active = false
-OnlineProfilesButton.Text = ""
-OnlineProfilesButton.ZIndex = 1
-OnlineProfilesButton.Font = Enum.Font.SourceSans
-OnlineProfilesButton.TextXAlignment = Enum.TextXAlignment.Left
-OnlineProfilesButton.Position = UDim2.new(0, 166, 0, 6)
-OnlineProfilesButton.Parent = ProfilesTextList.Object
-local OnlineProfilesButtonBKG = Instance.new("UIStroke")
-OnlineProfilesButtonBKG.Color = Color3.fromRGB(38, 37, 38)
-OnlineProfilesButtonBKG.Thickness = 1
-OnlineProfilesButtonBKG.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-OnlineProfilesButtonBKG.Parent = OnlineProfilesButton
-local OnlineProfilesButtonImage = Instance.new("ImageLabel")
-OnlineProfilesButtonImage.BackgroundTransparency = 1
-OnlineProfilesButtonImage.Position = UDim2.new(0, 14, 0, 7)
-OnlineProfilesButtonImage.Size = UDim2.new(0, 17, 0, 16)
-OnlineProfilesButtonImage.Image = downloadAsset("flash/assets/OnlineProfilesButton.png")
-OnlineProfilesButtonImage.ImageColor3 = Color3.fromRGB(121, 121, 121)
-OnlineProfilesButtonImage.ZIndex = 1
-OnlineProfilesButtonImage.Active = false
-OnlineProfilesButtonImage.Parent = OnlineProfilesButton
-local OnlineProfilesbuttonround1 = Instance.new("UICorner")
-OnlineProfilesbuttonround1.CornerRadius = UDim.new(0, 5)
-OnlineProfilesbuttonround1.Parent = OnlineProfilesButton
-local OnlineProfilesbuttonTargetInfoMainInfoCorner = Instance.new("UICorner")
-OnlineProfilesbuttonTargetInfoMainInfoCorner.CornerRadius = UDim.new(0, 5)
-OnlineProfilesbuttonTargetInfoMainInfoCorner.Parent = OnlineProfilesButtonBKG
-local OnlineProfilesFrame = Instance.new("Frame")
-OnlineProfilesFrame.Size = UDim2.new(0, 660, 0, 445)
-OnlineProfilesFrame.Position = UDim2.new(0.5, -330, 0.5, -223)
-OnlineProfilesFrame.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
-OnlineProfilesFrame.Parent = GuiLibrary.MainGui.ScaledGui.OnlineProfiles
-local OnlineProfilesExitButton = Instance.new("ImageButton")
-OnlineProfilesExitButton.Name = "OnlineProfilesExitButton"
-OnlineProfilesExitButton.ImageColor3 = Color3.fromRGB(121, 121, 121)
-OnlineProfilesExitButton.Size = UDim2.new(0, 24, 0, 24)
-OnlineProfilesExitButton.AutoButtonColor = false
-OnlineProfilesExitButton.Image = downloadAsset("flash/assets/ExitIcon1.png")
-OnlineProfilesExitButton.Visible = true
-OnlineProfilesExitButton.Position = UDim2.new(1, -31, 0, 8)
-OnlineProfilesExitButton.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
-OnlineProfilesExitButton.Parent = OnlineProfilesFrame
-local OnlineProfilesExitButtonround = Instance.new("UICorner")
-OnlineProfilesExitButtonround.CornerRadius = UDim.new(0, 16)
-OnlineProfilesExitButtonround.Parent = OnlineProfilesExitButton
-OnlineProfilesExitButton.MouseEnter:Connect(function()
-	game:GetService("TweenService"):Create(OnlineProfilesExitButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundColor3 = Color3.fromRGB(60, 60, 60), ImageColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-end)
-OnlineProfilesExitButton.MouseLeave:Connect(function()
-	game:GetService("TweenService"):Create(OnlineProfilesExitButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundColor3 = Color3.fromRGB(26, 25, 26), ImageColor3 = Color3.fromRGB(121, 121, 121)}):Play()
-end)
-local OnlineProfilesFrameShadow = Instance.new("ImageLabel")
-OnlineProfilesFrameShadow.AnchorPoint = Vector2.new(0.5, 0.5)
-OnlineProfilesFrameShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-OnlineProfilesFrameShadow.Image = downloadAsset("flash/assets/WindowBlur.png")
-OnlineProfilesFrameShadow.BackgroundTransparency = 1
-OnlineProfilesFrameShadow.ZIndex = -1
-OnlineProfilesFrameShadow.Size = UDim2.new(1, 6, 1, 6)
-OnlineProfilesFrameShadow.ImageColor3 = Color3.new()
-OnlineProfilesFrameShadow.ScaleType = Enum.ScaleType.Slice
-OnlineProfilesFrameShadow.SliceCenter = Rect.new(10, 10, 118, 118)
-OnlineProfilesFrameShadow.Parent = OnlineProfilesFrame
-local OnlineProfilesFrameIcon = Instance.new("ImageLabel")
-OnlineProfilesFrameIcon.Size = UDim2.new(0, 19, 0, 16)
-OnlineProfilesFrameIcon.Image = downloadAsset("flash/assets/ProfilesIcon.png")
-OnlineProfilesFrameIcon.Name = "WindowIcon"
-OnlineProfilesFrameIcon.BackgroundTransparency = 1
-OnlineProfilesFrameIcon.Position = UDim2.new(0, 10, 0, 13)
-OnlineProfilesFrameIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
-OnlineProfilesFrameIcon.Parent = OnlineProfilesFrame
-local OnlineProfilesFrameText = Instance.new("TextLabel")
-OnlineProfilesFrameText.Size = UDim2.new(0, 155, 0, 41)
-OnlineProfilesFrameText.BackgroundTransparency = 1
-OnlineProfilesFrameText.Name = "WindowTitle"
-OnlineProfilesFrameText.Position = UDim2.new(0, 36, 0, 0)
-OnlineProfilesFrameText.TextXAlignment = Enum.TextXAlignment.Left
-OnlineProfilesFrameText.Font = Enum.Font.SourceSans
-OnlineProfilesFrameText.TextSize = 17
-OnlineProfilesFrameText.Text = "Public Profiles"
-OnlineProfilesFrameText.TextColor3 = Color3.fromRGB(201, 201, 201)
-OnlineProfilesFrameText.Parent = OnlineProfilesFrame
-local OnlineProfilesFrameText2 = Instance.new("TextLabel")
-OnlineProfilesFrameText2.TextSize = 15
-OnlineProfilesFrameText2.TextColor3 = Color3.fromRGB(85, 84, 85)
-OnlineProfilesFrameText2.Text = "YOUR PROFILES"
-OnlineProfilesFrameText2.Font = Enum.Font.SourceSans
-OnlineProfilesFrameText2.BackgroundTransparency = 1
-OnlineProfilesFrameText2.TextXAlignment = Enum.TextXAlignment.Left
-OnlineProfilesFrameText2.TextYAlignment = Enum.TextYAlignment.Top
-OnlineProfilesFrameText2.Size = UDim2.new(1, 0, 0, 20)
-OnlineProfilesFrameText2.Position = UDim2.new(0, 10, 0, 48)
-OnlineProfilesFrameText2.Parent = OnlineProfilesFrame
-local OnlineProfilesFrameText3 = Instance.new("TextLabel")
-OnlineProfilesFrameText3.TextSize = 15
-OnlineProfilesFrameText3.TextColor3 = Color3.fromRGB(85, 84, 85)
-OnlineProfilesFrameText3.Text = "PUBLIC PROFILES"
-OnlineProfilesFrameText3.Font = Enum.Font.SourceSans
-OnlineProfilesFrameText3.BackgroundTransparency = 1
-OnlineProfilesFrameText3.TextXAlignment = Enum.TextXAlignment.Left
-OnlineProfilesFrameText3.TextYAlignment = Enum.TextYAlignment.Top
-OnlineProfilesFrameText3.Size = UDim2.new(1, 0, 0, 20)
-OnlineProfilesFrameText3.Position = UDim2.new(0, 231, 0, 48)
-OnlineProfilesFrameText3.Parent = OnlineProfilesFrame
-local OnlineProfilesBorder1 = Instance.new("Frame")
-OnlineProfilesBorder1.BackgroundColor3 = Color3.fromRGB(40, 39, 40)
-OnlineProfilesBorder1.BorderSizePixel = 0
-OnlineProfilesBorder1.Size = UDim2.new(1, 0, 0, 1)
-OnlineProfilesBorder1.Position = UDim2.new(0, 0, 0, 41)
-OnlineProfilesBorder1.Parent = OnlineProfilesFrame
-local OnlineProfilesBorder2 = Instance.new("Frame")
-OnlineProfilesBorder2.BackgroundColor3 = Color3.fromRGB(40, 39, 40)
-OnlineProfilesBorder2.BorderSizePixel = 0
-OnlineProfilesBorder2.Size = UDim2.new(0, 1, 1, -41)
-OnlineProfilesBorder2.Position = UDim2.new(0, 220, 0, 41)
-OnlineProfilesBorder2.Parent = OnlineProfilesFrame
-local OnlineProfilesList = Instance.new("ScrollingFrame")
-OnlineProfilesList.BackgroundTransparency = 1
-OnlineProfilesList.Size = UDim2.new(0, 408, 0, 319)
-OnlineProfilesList.Position = UDim2.new(0, 230, 0, 122)
-OnlineProfilesList.CanvasSize = UDim2.new(0, 408, 0, 319)
-OnlineProfilesList.Parent = OnlineProfilesFrame
-local OnlineProfilesListGrid = Instance.new("UIGridLayout")
-OnlineProfilesListGrid.CellSize = UDim2.new(0, 134, 0, 144)
-OnlineProfilesListGrid.CellPadding = UDim2.new(0, 4, 0, 4)
-OnlineProfilesListGrid.Parent = OnlineProfilesList
-local OnlineProfilesFrameCorner = Instance.new("UICorner")
-OnlineProfilesFrameCorner.CornerRadius = UDim.new(0, 4)
-OnlineProfilesFrameCorner.Parent = OnlineProfilesFrame
-OnlineProfilesButton.MouseButton1Click:Connect(function()
-	GuiLibrary.MainGui.ScaledGui.OnlineProfiles.Visible = true
-	GuiLibrary.MainGui.ScaledGui.ClickGui.Visible = false
-	if not profilesLoaded then
-		local onlineprofiles = {}
-		local saveplaceid = tostring(shared.CustomSaveflash or game.PlaceId)
-        local success, result = pcall(function()
-            return game:GetService("HttpService"):JSONDecode(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/flashProfiles/main/Profiles/"..saveplaceid.."/profilelist.txt", true))
-        end)
-		for i,v in pairs(success and result or {}) do 
-			onlineprofiles[i] = v
-		end
-		for i2,v2 in pairs(onlineprofiles) do
-			local profileurl = "https://raw.githubusercontent.com/7GrandDadPGN/flashProfiles/main/Profiles/"..saveplaceid.."/"..v2.OnlineProfileName
-			local profilebox = Instance.new("Frame")
-			profilebox.BackgroundColor3 = Color3.fromRGB(31, 30, 31)
-			profilebox.Parent = OnlineProfilesList
-			local profiletext = Instance.new("TextLabel")
-			profiletext.TextSize = 15
-			profiletext.TextColor3 = Color3.fromRGB(137, 136, 137)
-			profiletext.Size = UDim2.new(0, 100, 0, 20)
-			profiletext.Position = UDim2.new(0, 18, 0, 25)
-			profiletext.Font = Enum.Font.SourceSans
-			profiletext.TextXAlignment = Enum.TextXAlignment.Left
-			profiletext.TextYAlignment = Enum.TextYAlignment.Top
-			profiletext.BackgroundTransparency = 1
-			profiletext.Text = i2
-			profiletext.Parent = profilebox
-			local profiledownload = Instance.new("TextButton")
-			profiledownload.BackgroundColor3 = Color3.fromRGB(31, 30, 31)
-			profiledownload.Size = UDim2.new(0, 69, 0, 31)
-			profiledownload.Font = Enum.Font.SourceSans
-			profiledownload.TextColor3 = Color3.fromRGB(200, 200, 200)
-			profiledownload.TextSize = 15
-			profiledownload.AutoButtonColor = false
-			profiledownload.Text = "DOWNLOAD"
-			profiledownload.Position = UDim2.new(0, 14, 0, 96)
-			profiledownload.Visible = false 
-			profiledownload.Parent = profilebox
-			profiledownload.ZIndex = 2
-			local profiledownloadbkg = Instance.new("Frame")
-			profiledownloadbkg.Size = UDim2.new(0, 71, 0, 33)
-			profiledownloadbkg.BackgroundColor3 = Color3.fromRGB(42, 41, 42)
-			profiledownloadbkg.Position = UDim2.new(0, 13, 0, 95)
-			profiledownloadbkg.ZIndex = 1
-			profiledownloadbkg.Visible = false
-			profiledownloadbkg.Parent = profilebox
-			profilebox.MouseEnter:Connect(function()
-				profiletext.TextColor3 = Color3.fromRGB(200, 200, 200)
-				profiledownload.Visible = true 
-				profiledownloadbkg.Visible = true
-			end)
-			profilebox.MouseLeave:Connect(function()
-				profiletext.TextColor3 = Color3.fromRGB(137, 136, 137)
-				profiledownload.Visible = false
-				profiledownloadbkg.Visible = false
-			end)
-			profiledownload.MouseEnter:Connect(function()
-				profiledownload.BackgroundColor3 = Color3.fromRGB(5, 134, 105)
-			end)
-			profiledownload.MouseLeave:Connect(function()
-				profiledownload.BackgroundColor3 = Color3.fromRGB(31, 30, 31)
-			end)
-			profiledownload.MouseButton1Click:Connect(function()
-				writefile(baseDirectory.."Profiles/"..v2.ProfileName..saveplaceid..".flashprofile.txt", game:HttpGet(profileurl, true))
-				GuiLibrary.Profiles[v2.ProfileName] = {Keybind = "", Selected = false}
-				local profiles = {}
-				for i,v in pairs(GuiLibrary.Profiles) do 
-					table.insert(profiles, i)
-				end
-				table.sort(profiles, function(a, b) return b == "default" and true or a:lower() < b:lower() end)
-				ProfilesTextList.RefreshValues(profiles)
-			end)
-			local profileround = Instance.new("UICorner")
-			profileround.CornerRadius = UDim.new(0, 4)
-			profileround.Parent = profilebox
-			local profileTargetInfoMainInfoCorner = Instance.new("UICorner")
-			profileTargetInfoMainInfoCorner.CornerRadius = UDim.new(0, 4)
-			profileTargetInfoMainInfoCorner.Parent = profiledownload
-			local profileTargetInfoHealthBackgroundCorner = Instance.new("UICorner")
-			profileTargetInfoHealthBackgroundCorner.CornerRadius = UDim.new(0, 4)
-			profileTargetInfoHealthBackgroundCorner.Parent = profiledownloadbkg
-		end
-		profilesloaded = true
-	end
-end)
-OnlineProfilesExitButton.MouseButton1Click:Connect(function()
-	GuiLibrary.MainGui.ScaledGui.OnlineProfiles.Visible = false
-	GuiLibrary.MainGui.ScaledGui.ClickGui.Visible = true
-end)
-GUI.CreateDivider()
 
 local TextGUI = GuiLibrary.CreateCustomWindow({
 	Name = "Text GUI", 
@@ -846,13 +446,13 @@ local function TextGUIUpdate()
 		local formattedText = ""
 		local moduleList = {}
 
-		for i, v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
-			if v.Type == "OptionsButton" and v.Api.Enabled then
-                local blacklistedCheck = table.find(TextGUICircleObject.CircleList.ObjectList, v.Api.Name)
+		for i, v in pairs(GuiLibrary.Objects) do
+			if v.Type == "OptionsButton" and v.Controller.Enabled then
+                local blacklistedCheck = table.find(TextGUICircleObject.CircleList.ObjectList, v.Controller.Name)
                 blacklistedCheck = blacklistedCheck and TextGUICircleObject.CircleList.ObjectList[blacklistedCheck]
                 if not blacklistedCheck then
-					local extraText = v.Api.GetExtraText()
-                    table.insert(moduleList, {Text = v.Api.Name, ExtraText = extraText ~= "" and " "..extraText or ""})
+					local extraText = v.Controller.GetExtraText()
+                    table.insert(moduleList, {Text = v.Controller.Name, ExtraText = extraText ~= "" and " "..extraText or ""})
                 end
 			end
 		end
@@ -1450,7 +1050,7 @@ local windowSortOrder = {
 	WorldButton = 5,
 	FriendsButton = 6,
 	TargetsButton = 7,
-	ProfilesButton = 8
+	ConfigsButton = 8
 }
 local windowSortOrder2 = {"Combat", "Blatant", "Render", "Utility", "World"}
 
@@ -1479,7 +1079,7 @@ GuiLibrary.UpdateUI = function(h, s, val, bypass)
 		mainRainbowGradient = mainRainbowGradient % 1
         local mainRainbowGradientSaturation = TextGUIGradient.Enabled and getflashSaturation(mainRainbowGradient) or mainRainbowSaturation
 
-		GuiLibrary.ObjectsThatCanBeSaved.GUIWindow.Object.Logo1.Logo2.ImageColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
+		GuiLibrary.Objects.GUIWindow.Object.Logo1.Logo2.ImageColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 		flashText.TextColor3 = Color3.fromHSV(TextGUIGradient.Enabled and mainRainbowGradient or h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 		flashCustomText.TextColor3 = flashText.TextColor3
 		flashLogoGradient.Color = ColorSequence.new({
@@ -1518,20 +1118,20 @@ GuiLibrary.UpdateUI = function(h, s, val, bypass)
 
 		if (not GuiLibrary.MainGui.ScaledGui.ClickGui.Visible) and (not bypass) then return end
 		local buttonColorIndex = 0
-		for i, v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
+		for i, v in pairs(GuiLibrary.Objects) do
 			if v.Type == "TargetFrame" then
 				if v.Object2.Visible then
 					v.Object.TextButton.Frame.BackgroundColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 				end
 			elseif v.Type == "TargetButton" then
-				if v.Api.Enabled then
+				if v.Controller.Enabled then
 					v.Object.BackgroundColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 				end
 			elseif v.Type == "CircleListFrame" then
 				if v.Object2.Visible then
 					v.Object.TextButton.Frame.BackgroundColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 				end
-			elseif (v.Type == "Button" or v.Type == "ButtonMain") and v.Api.Enabled then
+			elseif (v.Type == "Button" or v.Type == "ButtonMain") and v.Controller.Enabled then
 				buttonColorIndex = buttonColorIndex + 1
 				local rainbowcolor = h + (rainbowGUICheck and (-0.025 * windowSortOrder[i]) or 0)
 				rainbowcolor = rainbowcolor % 1
@@ -1541,11 +1141,11 @@ GuiLibrary.UpdateUI = function(h, s, val, bypass)
 					v.Object.ButtonIcon.ImageColor3 = newcolor
 				end
 			elseif v.Type == "OptionsButton" then
-				if v.Api.Enabled then
+				if v.Controller.Enabled then
 					local newcolor = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 					if (not oldrainbow) then
 						local mainRainbowGradient = table.find(windowSortOrder2, v.Object.Parent.Parent.Name)
-						mainRainbowGradient = mainRainbowGradient and (mainRainbowGradient - 1) > 0 and GuiLibrary.ObjectsThatCanBeSaved[windowSortOrder2[mainRainbowGradient - 1].."Window"].SortOrder or 0
+						mainRainbowGradient = mainRainbowGradient and (mainRainbowGradient - 1) > 0 and GuiLibrary.Objects[windowSortOrder2[mainRainbowGradient - 1].."Window"].SortOrder or 0
 						local rainbowcolor = h + (rainbowGUICheck and (-0.025 * (mainRainbowGradient + v.SortOrder)) or 0)
 						rainbowcolor = rainbowcolor % 1
 						newcolor = Color3.fromHSV(rainbowcolor, rainbowGUICheck and getflashSaturation(rainbowcolor) or mainRainbowSaturation, rainbowGUICheck and 1 or val)
@@ -1553,13 +1153,13 @@ GuiLibrary.UpdateUI = function(h, s, val, bypass)
 					v.Object.BackgroundColor3 = newcolor
 				end
 			elseif v.Type == "ExtrasButton" then
-				if v.Api.Enabled then
+				if v.Controller.Enabled then
 					local rainbowcolor = h + (rainbowGUICheck and (-0.025 * buttonColorIndex) or 0)
 					rainbowcolor = rainbowcolor % 1
 					local newcolor = Color3.fromHSV(rainbowcolor, rainbowGUICheck and getflashSaturation(rainbowcolor) or mainRainbowSaturation, rainbowGUICheck and 1 or val)
 					v.Object.ImageColor3 = newcolor
 				end
-			elseif (v.Type == "Toggle" or v.Type == "ToggleMain") and v.Api.Enabled then
+			elseif (v.Type == "Toggle" or v.Type == "ToggleMain") and v.Controller.Enabled then
 				v.Object.ToggleFrame1.BackgroundColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 			elseif v.Type == "Slider" or v.Type == "SliderMain" then
 				v.Object.Slider.FillSlider.BackgroundColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
@@ -1573,10 +1173,10 @@ GuiLibrary.UpdateUI = function(h, s, val, bypass)
 
 		local rainbowcolor = h + (rainbowGUICheck and (-0.025 * buttonColorIndex) or 0)
 		rainbowcolor = rainbowcolor % 1
-		GuiLibrary.ObjectsThatCanBeSaved.GUIWindow.Object.Children.Extras.MainButton.ImageColor3 = (GUI.GetVisibleIcons() > 0 and Color3.fromHSV(rainbowcolor, getflashSaturation(rainbowcolor), 1) or Color3.fromRGB(199, 199, 199))
+		GuiLibrary.Objects.GUIWindow.Object.Children.Extras.MainButton.ImageColor3 = (GUI.GetVisibleIcons() > 0 and Color3.fromHSV(rainbowcolor, getflashSaturation(rainbowcolor), 1) or Color3.fromRGB(199, 199, 199))
 
-		for i, v in pairs(ProfilesTextList.ScrollingObject.ScrollingFrame:GetChildren()) do
-			if v:IsA("TextButton") and v.ItemText.Text == GuiLibrary.CurrentProfile then
+		for i, v in pairs(ConfigsTextList.ScrollingObject.ScrollingFrame:GetChildren()) do
+			if v:IsA("TextButton") and v.ItemText.Text == GuiLibrary.CurrentConfig then
 				v.BackgroundColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 				v.ImageButton.BackgroundColor3 = Color3.fromHSV(h, mainRainbowSaturation, rainbowGUICheck and 1 or val)
 				v.ItemText.TextColor3 = Color3.new(1, 1, 1)
@@ -1665,8 +1265,8 @@ local teleportConnection = playersService.LocalPlayer.OnTeleport:Connect(functio
 			shared.flashSwitchServers = true  
 			loadstring(game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/".."/Startup.lua", true))()
 		]]
-		if shared.flashCustomProfile then 
-			teleportScript = "shared.flashCustomProfile = '"..shared.flashCustomProfile.."'\n"..teleportScript
+		if shared.flashCustomConfig then 
+			teleportScript = "shared.flashCustomConfig = '"..shared.flashCustomConfig.."'\n"..teleportScript
 		end
 		GuiLibrary.SaveSettings()
 		queueonteleport(teleportScript)
@@ -1684,9 +1284,9 @@ GuiLibrary.SelfDestruct = function()
 	FlashExecuted = false
 	game:GetService("UserInputService").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 
-	for i,v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
-		if (v.Type == "Button" or v.Type == "OptionsButton") and v.Api.Enabled then
-			v.Api.ToggleButton(false)
+	for i,v in pairs(GuiLibrary.Objects) do
+		if (v.Type == "Button" or v.Type == "OptionsButton") and v.Controller.Enabled then
+			v.Controller.ToggleButton(false)
 		end
 	end
 
@@ -1703,11 +1303,9 @@ GuiLibrary.SelfDestruct = function()
 
 	GuiLibrary.SelfDestructEvent:Fire()
 	shared.FlashExecuted = nil
-	shared.flashFullyLoaded = nil
 	shared.flashSwitchServers = nil
 	shared.GuiLibrary = nil
 	shared.flashManualLoad = nil
-	shared.CustomSaveflash = nil
 	GuiLibrary.KeyInputHandler:Disconnect()
 	GuiLibrary.KeyInputHandler2:Disconnect()
 	if MiddleClickInput then
@@ -1719,13 +1317,13 @@ GuiLibrary.SelfDestruct = function()
 end
 
 GeneralSettings.CreateButton2({
-	Name = "RESET CURRENT PROFILE", 
+	Name = "RESET CURRENT Config", 
 	Function = function()
 		GuiLibrary.SelfDestruct()
 		if delfile then
-			delfile(baseDirectory.."Profiles/"..(GuiLibrary.CurrentProfile ~= "default" and GuiLibrary.CurrentProfile or "")..(shared.CustomSaveflash or game.PlaceId)..".flashprofile.txt")
+			delfile(baseDirectory.."Configs/"..(GuiLibrary.CurrentConfig ~= "default" and GuiLibrary.CurrentConfig or "")..game.PlaceId..".FlashConfig.txt")
 		else
-			writefile(baseDirectory.."Profiles/"..(GuiLibrary.CurrentProfile ~= "default" and GuiLibrary.CurrentProfile or "")..(shared.CustomSaveflash or game.PlaceId)..".flashprofile.txt", "")
+			writefile(baseDirectory.."Configs/"..(GuiLibrary.CurrentConfig ~= "default" and GuiLibrary.CurrentConfig or "")..game.PlaceId..".FlashConfig.txt", "")
 		end
 		shared.flashSwitchServers = true
 		shared.flashOpenGui = true
@@ -1735,7 +1333,7 @@ GeneralSettings.CreateButton2({
 GUISettings.CreateButton2({
 	Name = "RESET GUI POSITIONS", 
 	Function = function()
-		for i,v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
+		for i,v in pairs(GuiLibrary.Objects) do
 			if (v.Type == "Window" or v.Type == "CustomWindow") then
 				v.Object.Position = (i == "GUIWindow" and UDim2.new(0, 6, 0, 6) or UDim2.new(0, 223, 0, 6))
 			end
@@ -1756,15 +1354,15 @@ GUISettings.CreateButton2({
 			WorldWindow = 6,
 			FriendsWindow = 7,
 			TargetsWindow = 8,
-			ProfilesWindow = 9,
+			ConfigsWindow = 9,
 			["Text GUICustomWindow"] = 10,
 			TargetInfoCustomWindow = 11,
 			RadarCustomWindow = 12,
 		}
 		local storedpos = {}
 		local num = 6
-		for i,v in pairs(GuiLibrary.ObjectsThatCanBeSaved) do
-			local obj = GuiLibrary.ObjectsThatCanBeSaved[i]
+		for i,v in pairs(GuiLibrary.Objects) do
+			local obj = GuiLibrary.Objects[i]
 			if obj then
 				if v.Type == "Window" and v.Object.Visible then
 					local sortordernum = (sortordertable[i] or #sorttable)
@@ -1793,50 +1391,41 @@ GeneralSettings.CreateButton2({
 	Function = GuiLibrary.SelfDestruct
 })
 
-local function loadflash()
-		loadstring(getFromGithub("Universal.lua"))()
-		if isfile("flash/CustomModules/"..game.PlaceId..".lua") then
-			loadstring(readfile("flash/CustomModules/"..game.PlaceId..".lua"))()
-		else
-			local suc, publicrepo = pcall(function() return game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/flashV4ForRoblox/"..readfile("flash/commithash.txt").."/CustomModules/"..game.PlaceId..".lua") end)
-			if suc and publicrepo and publicrepo ~= "404: Not Found" then
-				writefile("flash/CustomModules/"..game.PlaceId..".lua", "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.\n"..publicrepo)
-				loadstring(readfile("flash/CustomModules/"..game.PlaceId..".lua"))()
-			end
-		end
-	if #ProfilesTextList.ObjectList == 0 then
-		table.insert(ProfilesTextList.ObjectList, "default")
-		ProfilesTextList.RefreshValues(ProfilesTextList.ObjectList)
-	end
-	GuiLibrary.LoadSettings(shared.flashCustomProfile)
-	local profiles = {}
-	for i,v in pairs(GuiLibrary.Profiles) do 
-		table.insert(profiles, i)
-	end
-	table.sort(profiles, function(a, b) return b == "default" and true or a:lower() < b:lower() end)
-	ProfilesTextList.RefreshValues(profiles)
-	GUIbind.Reload()
-	TextGUIUpdate()
-	GuiLibrary.UpdateUI(GUIColorSlider.Hue, GUIColorSlider.Sat, GUIColorSlider.Value, true)
-	if not shared.flashSwitchServers then
-		if BlatantModeToggle.Enabled then
-			pcall(function()
-				local frame = GuiLibrary.CreateNotification("Blatant Enabled", "flash is now in Blatant Mode.", 5.5, "assets/WarningNotification.png")
-				frame.Frame.Frame.ImageColor3 = Color3.fromRGB(236, 129, 44)
-			end)
-		end
-		GuiLibrary.LoadedAnimation(welcomeMessage.Enabled)
+if isfile("flash/"..PlaceDirectory) then
+	loadstring(readfile("flash/"..PlaceDirectory))()
+else
+	if getFromGithub(PlaceDirectory) then
+		loadstring(getFromGithub(PlaceDirectory))()
 	else
-		shared.flashSwitchServers = nil
+		loadstring(getFromGithub("Universal.lua"))()
 	end
-	if shared.flashOpenGui then
-		GuiLibrary.MainGui.ScaledGui.ClickGui.Visible = true
-		game:GetService("RunService"):SetRobloxGuiFocused(GuiLibrary.MainBlur.Size ~= 0) 
-		shared.flashOpenGui = nil
-	end
-
-	coroutine.resume(saveSettingsLoop)
-	shared.flashFullyLoaded = true
 end
-
-loadflash()
+if #ConfigsTextList.ObjectList == 0 then
+	table.insert(ConfigsTextList.ObjectList, "default")
+	ConfigsTextList.RefreshValues(ConfigsTextList.ObjectList)
+end
+GuiLibrary.LoadSettings(shared.flashCustomConfig)
+local Configs = {}
+for i,v in pairs(GuiLibrary.Configs) do 
+	table.insert(Configs, i)
+end
+table.sort(Configs, function(a, b) return b == "default" and true or a:lower() < b:lower() end)
+ConfigsTextList.RefreshValues(Configs)
+GuiLibrary.UpdateUI(GUIColorSlider.Hue, GUIColorSlider.Sat, GUIColorSlider.Value, true)
+if not shared.flashSwitchServers then
+	if BlatantModeToggle.Enabled then
+		pcall(function()
+			local frame = GuiLibrary.CreateNotification("Blatant Enabled", "Flash is now in Blatant Mode.", 5.5, "assets/WarningNotification.png")
+			frame.Frame.Frame.ImageColor3 = Color3.fromRGB(236, 129, 44)
+		end)
+	end
+	GuiLibrary.LoadedAnimation(welcomeMessage.Enabled)
+else
+	shared.flashSwitchServers = nil
+end
+if shared.flashOpenGui then
+	GuiLibrary.MainGui.ScaledGui.ClickGui.Visible = true
+	game:GetService("RunService"):SetRobloxGuiFocused(GuiLibrary.MainBlur.Size ~= 0) 
+	shared.flashOpenGui = nil
+end
+coroutine.resume(saveSettingsLoop)

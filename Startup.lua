@@ -1,6 +1,7 @@
 local errorPopupShown = false
 local setidentity = syn and syn.set_thread_identity or set_thread_identity or setidentity or setthreadidentity or function() end
 local getidentity = syn and syn.get_thread_identity or get_thread_identity or getidentity or getthreadidentity or function() return 8 end
+local cachedfiles = "flash/cachedfiles.txt"
 
 local function displayErrorPopup(text, func)
     local oldidentity = getidentity()
@@ -31,7 +32,7 @@ local function getFromGithub(scripturl)
         task.delay(15, function()
             if not res and not errorPopupShown then
                 errorPopupShown = true
-                displayErrorPopup("The connection to github is taking a while...")
+                displayErrorPopup("The connection to github is slow...")
             end
         end)
         suc, res = pcall(function()
@@ -42,7 +43,8 @@ local function getFromGithub(scripturl)
             error(res)
         end
         if scripturl:find(".lua") then
-            res = "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.\n" .. res
+            local cached = readfile(cachedfiles)
+            res = scripturl.."\n"..cached.."\n"
         end
         writefile("flash/" .. scripturl, res)
     end
@@ -50,25 +52,22 @@ local function getFromGithub(scripturl)
 end
 
 if isfolder("flash") then
-    if ((not isfile("flash/version.txt")) or (readfile("flash/version.txt") < getFromGithub("version.txt"))) then
+    if ((not isfile("flash/version.txt")) or readfile("flash/version.txt") < getFromGithub("version.txt")) then
         for i, v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua"}) do
-            if isfile(v) and readfile(v):find(
-                "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.") then
+            if isfile(v) and readfile(cachedfiles):find(v) then
                 delfile(v)
             end
         end
-        if isfolder("flash/CustomModules") then
-            for i, v in pairs(listfiles("flash/CustomModules")) do
-                if isfile(v) and readfile(v):find(
-                    "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.") then
+        if isfolder("flash/Games") then
+            for i, v in pairs(listfiles("flash/Games")) do
+                if isfile(v) and readfile(cachedfiles):find(v) then
                     delfile(v)
                 end
             end
         end
         if isfolder("flash/Libraries") then
             for i, v in pairs(listfiles("flash/Libraries")) do
-                if isfile(v) and readfile(v):find(
-                    "--This watermark is used to delete the file if its cached, remove it to make the file persist after commits.") then
+                if isfile(v) and readfile(cachedfiles):find(v) then
                     delfile(v)
                 end
             end
