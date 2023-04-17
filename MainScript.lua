@@ -1305,9 +1305,7 @@ GuiLibrary.SelfDestruct = function()
 	shared.FlashExecuted = nil
 	shared.flashSwitchServers = nil
 	shared.GuiLibrary = nil
-	shared.flashManualLoad = nil
 	GuiLibrary.KeyInputHandler:Disconnect()
-	GuiLibrary.KeyInputHandler2:Disconnect()
 	if MiddleClickInput then
 		MiddleClickInput:Disconnect()
 	end

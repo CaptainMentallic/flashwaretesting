@@ -32,9 +32,7 @@ if shared.FlashExecuted then
         Notifications = false,
         ToggleTooltips = false,
         Objects = {
-            SavedObjects = {
 
-            }
         },
         Colors = {
             BACKGROUND_COLOR = Color3.fromRGB(62, 66, 71),
@@ -243,9 +241,6 @@ if shared.FlashExecuted then
     hudgui.Visible = true
     hudgui.Parent = scaledgui
 
-    GuiLibrary["MainBlur"] = {
-        Size = 25
-    }
     GuiLibrary["MainRescale"] = Instance.new("UIScale")
     GuiLibrary["MainRescale"].Parent = scaledgui
 
@@ -300,7 +295,7 @@ if shared.FlashExecuted then
         if loadedsuccessfully then
             writefile(baseDirectory .. "Configs/" .. game.PlaceId .. ".FlashConfigs.txt", httpService:JSONEncode(GuiLibrary.Configs))
             local WindowTable = {}
-            for i, v in pairs(GuiLibrary.Objects.SavedObjects) do
+            for i, v in pairs(GuiLibrary.Objects) do
                 if v.Type == "MainWindow" then
                     WindowTable[i] = {
                         ["Type"] = "MainWindow",
@@ -321,8 +316,6 @@ if shared.FlashExecuted then
                         ["Type"] = "Tab",
                         ["Name"] = v.Object.Name,
                         ["LayoutOrder"] = v.Object.LayoutOrder,
-                        ["Visible"] = v.Object.Visible,
-                        ["Position"] = v.Object.Position
                     }
                 end
                 if (v.Type == "ToggleButton") then
@@ -368,7 +361,7 @@ if shared.FlashExecuted then
                 ["Value"] = GuiLibrary["GUIKeybind"]
             }
             writefile(baseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." .. game.PlaceId .. ".FlashConfig.txt", httpService:JSONEncode(GuiLibrary.Settings))
-            writefile(baseDirectory .. "Configs/" .. game.GameId .. "UISettings.FlashConfig.txt", httpService:JSONEncode(WindowTable))
+            writefile(baseDirectory .. "Configs/" .. game.GameId .. ".UISettings.FlashConfig.txt", httpService:JSONEncode(WindowTable))
         end
     end
 
@@ -392,64 +385,33 @@ if shared.FlashExecuted then
             GuiLibrary.CurrentConfig = customconfig
         end
         local success1, result1 = pcall(function()
-            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" .. (game.GameId) .. "UISettings.FlashConfig.txt"))
+            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" .. (game.GameId) .. ".UISettings.FlashConfig.txt"))
         end)
         if success1 and type(result1) == "table" then
             for i, v in pairs(result1) do
                 local obj = GuiLibrary.Objects[i]
                 if obj then
-                    if v.Type == "Window" then
-                        obj.Object.Position = UDim2.new(v["Position"][1], v["Position"][2], v["Position"][3],
-                            v["Position"][4])
+                    if v.Type == "MainWindow" then
+                        obj.Object.Position = UDim2.new(v["Position"])
                         obj.Object.Visible = v["Visible"]
-                        if v["Expanded"] then
-                            obj["controller"]["ExpandToggle"]()
-                        end
                     end
-                    if v.Type == "CustomWindow" then
-                        obj.Object.Position = UDim2.new(v["Position"][1], v["Position"][2], v["Position"][3],
-                            v["Position"][4])
+                    if v.Type == "ControlFrame" then
+                        obj.Object.Position = UDim2.new(v["Position"])
                         obj.Object.Visible = v["Visible"]
-                        if v["Pinned"] then
-                            obj["controller"]["PinnedToggle"]()
-                        end
-                        obj["controller"]["CheckVis"]()
                     end
-                    if v.Type == "ButtonMain" then
-                        if obj["Type"] == "ToggleMain" then
-                            obj["controller"]["ToggleFrame"](v["Enabled"], true)
-                            if v["Keybind"] ~= "" then
-                                obj["controller"]["Keybind"] = v["Keybind"]
-                            end
-                        else
-                            if v["Enabled"] then
-                                obj["controller"]["ToggleFrame"](false)
-                                if v["Keybind"] ~= "" then
-                                    obj["controller"]["SetKeybind"](v["Keybind"])
-                                end
-                            end
-                        end
+                    if v.Type == "Tab" then
+                        obj.Object.LayoutOrder = v["LayoutOrder"]
                     end
-                    if v.Type == "DropdownMain" then
-                        obj["controller"]["SetValue"](v["Value"])
+                    if v.Type == "ToggleButton" then
+                        obj.Object.LayoutOrder = v["LayoutOrder"]
+                        obj["Controller"]["Toggle"](v["Enabled"])
                     end
-                    if v.Type == "ColorSliderMain" then
-                        local valcheck = v["Hue"] ~= nil
-                        obj["controller"]["SetValue"](valcheck and v["Hue"] or v["Value"] or 0.44,
-                            valcheck or v["Sat"] or 1, valcheck and v["Value"] or 1)
-                        obj["controller"]["SetRainbow"](v["RainbowValue"])
+                    if v.Type == "Slider" then
+                        obj.Object.LayoutOrder = v["LayoutOrder"]
+                        obj["Controller"]["SetValue"](v["Value"])
                     end
-                    if v.Type == "ColorSliderGUI" then
-                        local valcheck = v["Hue"] ~= nil
-                        obj["controller"]["SetValue"](valcheck and v["Hue"] and (v["Hue"] / 7) - 0.1 or v["Value"] or
-                                                          0.44, valcheck or v["Sat"] or 1, valcheck and v["Value"] or 1)
-                        obj["controller"]["SetRainbow"](v["RainbowValue"])
-                    end
-                    if v.Type == "SliderMain" then
-                        obj["controller"]["SetValue"](v["Value"])
-                    end
-                    if v.Type == "TextBoxMain" then
-                        obj["controller"]["SetValue"](v["Value"])
+                    if v.Type == "Divider" then
+                        obj.Object.LayoutOrder = v["LayoutOrder"]
                     end
                 end
                 if v.Type == "GUIKeybind" then
@@ -457,110 +419,18 @@ if shared.FlashExecuted then
                 end
             end
         end
-        local success, result = pcall(function()
-            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" ..
-                                                       (GuiLibrary.CurrentConfig == "Default" and "" or
-                                                           GuiLibrary.CurrentConfig) ..
-                                                       game.PlaceId .. ".FlashConfig.txt"))
+        local success2, result2 = pcall(function()
+            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." .. game.PlaceId .. ".FlashConfig.txt"))
         end)
-        if success and type(result) == "table" then
+        if success2 and type(result2) == "table" then
             GuiLibrary["LoadSettingsEvent"]:Fire(result)
-            for i, v in pairs(result) do
+            for i, v in pairs(result2) do
                 if v.Type == "Custom" and GuiLibrary.Settings[i] then
                     GuiLibrary.Settings[i] = v
                 end
                 local obj = GuiLibrary.Objects[i]
                 if obj then
-                    local starttick = tick()
-                    if v.Type == "Dropdown" then
-                        obj["controller"]["SetValue"](v["Value"])
-                    end
-                    if v.Type == "CustomWindow" then
-                        obj.Object.Position = UDim2.new(v["Position"][1], v["Position"][2], v["Position"][3],
-                            v["Position"][4])
-                        obj.Object.Visible = v["Visible"]
-                        if v["Pinned"] then
-                            obj["controller"]["PinnedToggle"]()
-                        end
-                        obj["controller"]["CheckVis"]()
-                    end
-                    if v.Type == "Button" then
-                        if obj["Type"] == "Toggle" then
-                            obj["controller"]["ToggleFrame"](v["Enabled"], true)
-                            if v["Keybind"] ~= "" then
-                                obj["controller"]["Keybind"] = v["Keybind"]
-                            end
-                        elseif obj["Type"] == "TargetButton" then
-                            obj["controller"]["ToggleFrame"](v["Enabled"], true)
-                        else
-                            if v["Enabled"] then
-                                obj["controller"]["ToggleFrame"](false)
-                                if v["Keybind"] ~= "" then
-                                    obj["controller"]["SetKeybind"](v["Keybind"])
-                                end
-                            end
-                        end
-                    end
-                    if v.Type == "NewToggle" then
-                        obj["controller"]["ToggleFrame"](v["Enabled"], true)
-                        if v["Keybind"] ~= "" then
-                            obj["controller"]["Keybind"] = v["Keybind"]
-                        end
-                    end
-                    if v.Type == "Slider" then
-                        obj["controller"]["SetValue"](v["OldMax"] ~= obj["controller"]["Max"] and v["Value"] >
-                                                          obj["controller"]["Max"] and obj["controller"]["Max"] or
-                                                          (v["OldDefault"] ~= obj["controller"]["Default"] and
-                                                              v["Value"] == v["OldDefault"] and
-                                                              obj["controller"]["Default"] or v["Value"]))
-                    end
-                    if v.Type == "TextBox" then
-                        obj["controller"]["SetValue"](v["Value"])
-                    end
-                    if v.Type == "TextList" then
-                        obj["controller"]["RefreshValues"]((v["ObjectTable"] or {}))
-                    end
-                    if v.Type == "TextCircleList" then
-                        obj["controller"]["RefreshValues"]((v["ObjectTable"] or {}), (v["ObjectTableEnabled"] or {}))
-                    end
-                    if v.Type == "TwoSlider" then
-                        obj["controller"]["SetValue"](v["Value"] == obj["controller"]["Min"] and 0 or v["Value"])
-                        obj["controller"]["SetValue2"](v["Value2"])
-                        obj.Object.Slider.ButtonSlider.Position = UDim2.new(v["SliderPos1"], -8, 1, -9)
-                        obj.Object.Slider.ButtonBarClipping.Position = UDim2.new(v["SliderPos2"], -8, 1, -9)
-                        obj.Object.Slider.FillSlider.Size = UDim2.new(0, obj.Object.Slider.ButtonBarClipping
-                            .AbsolutePosition.X - obj.Object.Slider.ButtonSlider.AbsolutePosition.X, 1, 0)
-                        obj.Object.Slider.FillSlider.Position = UDim2.new(
-                            obj.Object.Slider.ButtonSlider.Position.X.Scale, 0, 0, 0)
-                        -- obj.Object.Slider.FillSlider.Size = UDim2.new((v["Value"] < obj["controller"]["Max"] and v["Value"] or obj["controller"]["Max"]) / obj["controller"]["Max"], 0, 1, 0)
-                    end
-                    if v.Type == "ColorSlider" then
-                        v["Hue"] = v["Hue"] or 0.44
-                        v["Sat"] = v["Sat"] or 1
-                        v["Value"] = v["Value"] or 1
-                        obj["controller"]["SetValue"](v["Hue"], v["Sat"], v["Value"])
-                        obj["controller"]["SetRainbow"](v["RainbowValue"])
-                        obj.Object.Slider.ButtonSlider.Position = UDim2.new(math.clamp(v["Hue"], 0.02, 0.95), -9, 0, -7)
-                        pcall(function()
-                            obj["Object2"].Slider.ButtonSlider.Position =
-                                UDim2.new(math.clamp(v["Sat"], 0.02, 0.95), -9, 0, -7)
-                            obj["Object3"].Slider.ButtonSlider.Position =
-                                UDim2.new(math.clamp(v["Value"], 0.02, 0.95), -9, 0, -7)
-                        end)
-                    end
-                end
-            end
-            for i, v in pairs(result) do
-                local obj = GuiLibrary.Objects[i]
-                if obj then
-                    if v.Type == "OptionsButton" then
-                        if v["Enabled"] then
-                            GuiLibrary.Objects[i]["controller"]["ToggleFrame"](false)
-                        end
-                        if v["Keybind"] ~= "" then
-                            GuiLibrary.Objects[i]["controller"]["SetKeybind"](v["Keybind"])
-                        end
-                    end
+                    ----------- Put here loading FlashConfig data (not UISettings FlashConfig)
                 end
             end
         end
@@ -570,20 +440,14 @@ if shared.FlashExecuted then
     GuiLibrary["SwitchConfig"] = function(configname)
         GuiLibrary.Configs[GuiLibrary.CurrentConfig]["Selected"] = false
         GuiLibrary.Configs[configname]["Selected"] = true
-        if (not isfile(baseDirectory .. "Configs/" .. (configname == "Default" and "" or configname) ..
-                           game.PlaceId .. ".FlashConfig.txt")) then
-            local realconfig = GuiLibrary.CurrentConfig
+        if (not isfile(baseDirectory .. "Configs/" .. (configname == "Default" and "" or configname) .. game.PlaceId .. ".FlashConfig.txt")) then
+            local config = GuiLibrary.CurrentConfig
             GuiLibrary.CurrentConfig = configname
             GuiLibrary.SaveSettings()
-            GuiLibrary.CurrentConfig = realconfig
+            GuiLibrary.CurrentConfig = config
         end
-        local oldindependent = shared.flashIndependent
         GuiLibrary.SelfDestruct()
-        if not oldindependent then
-            shared.flashSwitchServers = true
-            shared.flashOpenGui = (mainui.Visible)
-            loadstring(getFromGithub("Startup.lua"))()
-        end
+        loadstring(getFromGithub("Startup.lua"))()
     end
 
     GuiLibrary["CreateMainWindow"] = function()
@@ -1023,125 +887,6 @@ if shared.FlashExecuted then
         return windowcontroller
     end
 
-    -- work on later
-    -- windowcontroller["CreateGUIBind"] = function()
-    -- 	local amount2 = #children2:GetChildren()
-    -- 	local frame = Instance.new("TextLabel")
-    -- 	frame.Size = UDim2.new(0, 220, 0, 40)
-    -- 	frame.BackgroundTransparency = 1
-    -- 	frame.TextSize = 17
-    -- 	frame.TextColor3 = Color3.fromRGB(151, 151, 151)
-    -- 	frame.Font = Enum.Font.SourceSans
-    -- 	frame.Text = "   Rebind GUI"
-    -- 	frame.LayoutOrder = amount2
-    -- 	frame.Name = "Rebind GUI"
-    -- 	frame.TextXAlignment = Enum.TextXAlignment.Left
-    -- 	frame.Parent = children2
-    -- 	local bindbkg = Instance.new("TextButton")
-    -- 	bindbkg.Text = ""
-    -- 	bindbkg.AutoButtonColor = false
-    -- 	bindbkg.Size = UDim2.new(0, 20, 0, 21)
-    -- 	bindbkg.Position = UDim2.new(1, -50, 0, 10)
-    -- 	bindbkg.BorderSizePixel = 0
-    -- 	bindbkg.BackgroundColor3 = Color3.fromRGB(40, 41, 40)
-    -- 	bindbkg.BackgroundTransparency = 0
-    -- 	bindbkg.Visible = true
-    -- 	bindbkg.Parent = frame
-    -- 	local bindimg = Instance.new("ImageLabel")
-    -- 	bindimg.Image = downloadAsset("flash/assets/KeybindIcon.png")
-    -- 	bindimg.BackgroundTransparency = 1
-    -- 	bindimg.ImageColor3 = Color3.fromRGB(225, 225, 225)
-    -- 	bindimg.Size = UDim2.new(0, 12, 0, 12)
-    -- 	bindimg.Position = UDim2.new(0.5, -6, 0, 5)
-    -- 	bindimg.Active = false
-    -- 	bindimg.Visible = (GuiLibrary["GUIKeybind"] == "")
-    -- 	bindimg.Parent = bindbkg
-    -- 	local bindtext = Instance.new("TextLabel")
-    -- 	bindtext.Active = false
-    -- 	bindtext.BackgroundTransparency = 1
-    -- 	bindtext.TextSize = 16
-    -- 	bindtext.Parent = bindbkg
-    -- 	bindtext.Font = Enum.Font.SourceSans
-    -- 	bindtext.Size = UDim2.new(1, 0, 1, 0)
-    -- 	bindtext.TextColor3 = Color3.fromRGB(80, 80, 80)
-    -- 	bindtext.Visible = (GuiLibrary["GUIKeybind"] ~= "")
-    -- 	local bindValueLabel = Instance.new("ImageLabel")
-    -- 	bindValueLabel.Size = UDim2.new(0, 154, 0, 41)
-    -- 	bindValueLabel.Image = downloadAsset("flash/assets/BindBackground.png")
-    -- 	bindValueLabel.BackgroundTransparency = 1
-    -- 	bindValueLabel.ScaleType = Enum.ScaleType.Slice
-    -- 	bindValueLabel.SliceCenter = Rect.new(0, 0, 140, 41)
-    -- 	bindValueLabel.Visible = false
-    -- 	bindValueLabel.Parent = frame
-    -- 	local bindtext3 = Instance.new("TextLabel")
-    -- 	bindtext3.Text = "  PRESS  KEY TO BIND"
-    -- 	bindtext3.Size = UDim2.new(0, 150, 0, 33)
-    -- 	bindtext3.Font = Enum.Font.SourceSans
-    -- 	bindtext3.TextXAlignment = Enum.TextXAlignment.Left
-    -- 	bindtext3.TextSize = 17
-    -- 	bindtext3.TextColor3 = Color3.fromRGB(44, 44, 44)
-    -- 	bindtext3.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-    -- 	bindtext3.BorderSizePixel = 0
-    -- 	bindtext3.Parent = bindValueLabel
-    -- 	local bindround = Instance.new("UICorner")
-    -- 	bindround.CornerRadius = UDim.new(0, 6)
-    -- 	bindround.Parent = bindbkg
-    -- 	bindbkg.MouseButton1Click:Connect(function()
-    -- 		if GuiLibrary["KeybindCaptured"] == false then
-    -- 			GuiLibrary["KeybindCaptured"] = true
-    -- 			task.spawn(function()
-    -- 				bindValueLabel.Visible = true
-    -- 				repeat task.wait() until GuiLibrary["PressedKeybindKey"] ~= ""
-    -- 				local key = GuiLibrary["PressedKeybindKey"]
-    -- 				local textsize = textService:GetTextSize(key, 16, bindtext.Font, Vector2.new(99999, 99999))
-    -- 				newsize = UDim2.new(0, 13 + textsize.X, 0, 21)
-    -- 				GuiLibrary["GUIKeybind"] = key
-    -- 				bindbkg.Visible = true
-    -- 				bindbkg.Size = newsize
-    -- 				bindbkg.Position = UDim2.new(1, -(10 + newsize.X.Offset), 0, 10)
-    -- 				bindimg.Visible = false
-    -- 				bindtext.Visible = true
-    -- 				bindtext.Text = key
-    -- 				GuiLibrary["PressedKeybindKey"] = ""
-    -- 				GuiLibrary["KeybindCaptured"] = false
-    -- 				bindValueLabel.Visible = false
-    -- 			end)
-    -- 		end
-    -- 	end)
-    -- 	bindbkg.MouseEnter:Connect(function() 
-    -- 		bindimg.Image = downloadAsset("flash/assets/PencilIcon.png") 
-    -- 		bindimg.Visible = true
-    -- 		bindtext.Visible = false
-    -- 	end)
-    -- 	bindbkg.MouseLeave:Connect(function() 
-    -- 		bindimg.Image = downloadAsset("flash/assets/KeybindIcon.png")
-    -- 		if GuiLibrary["GUIKeybind"] ~= "" then
-    -- 			bindimg.Visible = false
-    -- 			bindtext.Visible = true
-    -- 			bindbkg.Size = newsize
-    -- 			bindbkg.Position = UDim2.new(1, -(10 + newsize.X.Offset), 0, 10)
-    -- 		end
-    -- 	end)
-    -- 	if GuiLibrary["GUIKeybind"] ~= "" then
-    -- 		bindtext.Text = GuiLibrary["GUIKeybind"]
-    -- 		local textsize = textService:GetTextSize(GuiLibrary["GUIKeybind"], 16, bindtext.Font, Vector2.new(99999, 99999))
-    -- 		newsize = UDim2.new(0, 13 + textsize.X, 0, 21)
-    -- 		bindbkg.Size = newsize
-    -- 		bindbkg.Position = UDim2.new(1, -(10 + newsize.X.Offset), 0, 10)
-    -- 	end
-    -- 	return {
-    -- 		["Reload"] = function()
-    -- 			if GuiLibrary["GUIKeybind"] ~= "" then
-    -- 				bindtext.Text = GuiLibrary["GUIKeybind"]
-    -- 				local textsize = textService:GetTextSize(GuiLibrary["GUIKeybind"], 16, bindtext.Font, Vector2.new(99999, 99999))
-    -- 				newsize = UDim2.new(0, 13 + textsize.X, 0, 21)
-    -- 				bindbkg.Size = newsize
-    -- 				bindbkg.Position = UDim2.new(1, -(10 + newsize.X.Offset), 0, 10)
-    -- 			end
-    -- 		end
-    -- 	}
-    -- end
-
     local function bettertween(obj, newpos, dir, style, tim, override)
         task.spawn(function()
             local frame = Instance.new("Frame")
@@ -1294,136 +1039,32 @@ if shared.FlashExecuted then
         end
     end
 
-    local holdingalt = false
+    local holdingctrl = false
     local uninjected = false
 
     GuiLibrary["KeyInputHandler"] = inputService.InputBegan:Connect(function(input1)
         if inputService:GetFocusedTextBox() == nil then
             if input1.KeyCode == Enum.KeyCode[GuiLibrary["GUIKeybind"]] and GuiLibrary["KeybindCaptured"] == false then
                 mainui.Visible = not mainui.Visible
-                inputService.OverrideMouseIconBehavior = (mainui.Visible and Enum.OverrideMouseIconBehavior.ForceShow or
-                                                             game:GetService("VRService").VREnabled and
-                                                             Enum.OverrideMouseIconBehavior.ForceHide or
-                                                             Enum.OverrideMouseIconBehavior.None)
-                game:GetService("RunService"):SetRobloxGuiFocused(
-                    mainui.Visible and GuiLibrary["MainBlur"].Size ~= 0 or guiService:GetErrorType() ~=
-                        Enum.ConnectionError.OK)
-                if OnlineConfigsBigFrame.Visible then
-                    OnlineConfigsBigFrame.Visible = false
-                end
             end
-            if input1.KeyCode == Enum.KeyCode.RightAlt then
-                holdingalt = true
-            end
-            if input1.KeyCode == Enum.KeyCode.Home and holdingalt and (not uninjected) then
+            if input1.KeyCode == Enum.KeyCode.Delete and holdingctrl and (not uninjected) then
                 GuiLibrary["SelfDestruct"]()
                 uninjected = true
             end
-            if GuiLibrary["KeybindCaptured"] and input1.KeyCode ~= Enum.KeyCode.LeftShift then
-                local hah = string.gsub(tostring(input1.KeyCode), "Enum.KeyCode.", "")
-                GuiLibrary["PressedKeybindKey"] = (hah ~= "Unknown" and hah or "")
-            end
-            for modules, aGuiLibrary in pairs(GuiLibrary.Objects) do
-                if (aGuiLibrary["Type"] == "OptionsButton" or aGuiLibrary["Type"] == "Button") and
-                    (aGuiLibrary["controller"]["Keybind"] ~= nil and aGuiLibrary["controller"]["Keybind"] ~= "") and
-                    GuiLibrary["KeybindCaptured"] == false then
-                    if input1.KeyCode == Enum.KeyCode[aGuiLibrary["controller"]["Keybind"]] and
-                        aGuiLibrary["controller"]["Keybind"] ~= GuiLibrary["GUIKeybind"] then
-                        aGuiLibrary["controller"]["ToggleFrame"](false)
-                        if GuiLibrary["ToggleNotifications"] then
-                            GuiLibrary["CreateNotification"]("Module Toggled",
-                                aGuiLibrary["controller"]["Name"] ..
-                                    ' <font color="#FFFFFF">has been</font> <font color="' ..
-                                    (aGuiLibrary["controller"]["Enabled"] and '#32CD32' or '#FF6464') .. '">' ..
-                                    (aGuiLibrary["controller"]["Enabled"] and "Enabled" or "Disabled") ..
-                                    '</font><font color="#FFFFFF">!</font>', 1)
-                        end
-                    end
-                end
-            end
-            for confignametext, configtab in pairs(GuiLibrary.Configs) do
-                if (configtab["Keybind"] ~= nil and configtab["Keybind"] ~= "") and GuiLibrary["KeybindCaptured"] ==
-                    false and confignametext ~= GuiLibrary.CurrentConfig then
-                    if input1.KeyCode == Enum.KeyCode[configtab["Keybind"]] then
-                        GuiLibrary["SwitchConfig"](confignametext)
-                    end
-                end
-            end
-        end
-    end)
 
-    GuiLibrary["KeyInputHandler2"] = inputService.InputEnded:Connect(function(input1)
-        if input1.KeyCode == Enum.KeyCode.RightAlt then
-            holdingalt = false
+            if input1.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then 
+				holdingctrl = true
+			end
         end
     end)
 
     searchbar:GetPropertyChangedSignal("Text"):Connect(function()
-        searchbarchildren:ClearAllChildren()
         if searchbar.Text == "" then
             searchbarmain.Size = UDim2.new(0, 220, 0, 37)
         else
             local optionbuttons = {}
             for i, v in pairs(GuiLibrary.Objects) do
-                if i:find("OptionsButton") and i:sub(1, searchbar.Text:len()):lower() == searchbar.Text:lower() then
-                    local button = Instance.new("TextButton")
-                    button.Name = v.Object.Name
-                    button.AutoButtonColor = false
-                    button.Active = true
-                    button.Size = UDim2.new(1, 0, 0, 40)
-                    button.BorderSizePixel = 0
-                    button.Position = UDim2.new(0, 0, 0, 40 * #optionbuttons)
-                    button.ZIndex = 10
-                    button.BackgroundColor3 = v.Object.BackgroundColor3
-                    button.Text = ""
-                    button.LayoutOrder = amount
-                    button.Parent = searchbarchildren
-                    v.Object:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
-                        button.BackgroundColor3 = v.Object.BackgroundColor3
-                    end)
-                    local buttonactiveborder = Instance.new("Frame")
-                    buttonactiveborder.BackgroundTransparency = 0.75
-                    buttonactiveborder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                    buttonactiveborder.BorderSizePixel = 0
-                    buttonactiveborder.Size = UDim2.new(1, 0, 0, 1)
-                    buttonactiveborder.Position = UDim2.new(0, 0, 1, -1)
-                    buttonactiveborder.ZIndex = 10
-                    buttonactiveborder.Visible = false
-                    buttonactiveborder.Parent = button
-                    local button2 = Instance.new("ImageButton")
-                    button2.BackgroundTransparency = 1
-                    button2.Size = UDim2.new(0, 10, 0, 20)
-                    button2.Position = UDim2.new(1, -24, 0, 10)
-                    button2.Name = "OptionsButton"
-                    button2.ZIndex = 10
-                    button2.Image = v.Object.OptionsButton.Image
-                    button2.Parent = button
-                    v.Object.OptionsButton:GetPropertyChangedSignal("Image"):Connect(function()
-                        button2.Image = v.Object.OptionsButton.Image
-                    end)
-                    local buttontext = Instance.new("TextLabel")
-                    buttontext.BackgroundTransparency = 1
-                    buttontext.Name = "ButtonText"
-                    buttontext.Text = (translations[v.Object.Name:gsub("Button", "")] ~= nil and
-                                          translations[v.Object.Name:gsub("Button", "")] or
-                                          v.Object.Name:gsub("Button", ""))
-                    buttontext.Size = UDim2.new(0, 118, 0, 39)
-                    buttontext.Active = false
-                    buttontext.ZIndex = 10
-                    buttontext.TextColor3 = v.Object.ButtonText.TextColor3
-                    v.Object.ButtonText:GetPropertyChangedSignal("TextColor3"):Connect(function()
-                        buttontext.TextColor3 = v.Object.ButtonText.TextColor3
-                    end)
-                    buttontext.TextSize = 17
-                    buttontext.Font = Enum.Font.SourceSans
-                    buttontext.TextXAlignment = Enum.TextXAlignment.Left
-                    buttontext.Position = UDim2.new(0, 12, 0, 0)
-                    buttontext.Parent = button
-                    button.MouseButton1Click:Connect(function()
-                        v["controller"]["ToggleFrame"](false)
-                    end)
-                    table.insert(optionbuttons, v)
-                end
+                
             end
             searchbarmain.Size = UDim2.new(0, 220, 0, 39 + (40 * #optionbuttons))
         end
