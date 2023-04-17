@@ -2,22 +2,17 @@ if shared.FlashExecuted then
     local Version = readfile("flash/version.txt")
     local baseDirectory = "flash/"
     local universalRainbowValue = 0
-    local getcustomasset = getsynasset or getcustomasset or function(location)
-        return "rbxasset://" .. location
-    end
-    local requestfunc = syn and syn.request or http and http.request or http_request or fluxus and fluxus.request or
-                            request or function()
-    end
-    local isfile = isfile or function(file)
-        local suc, res = pcall(function()
-            return readfile(file)
-        end)
-        return suc and res ~= nil
-    end
+    local getcustomasset = getsynasset or getcustomasset or function(location) return "rbxasset://" .. location end
+    local requestfunc = syn and syn.request or http and http.request or http_request or request or function() end
     local loadedsuccessfully = false
 
     local GuiLibrary = {
-        Settings = {},
+        Settings = {
+            CurrentTheme = {
+                Type = "Custom",
+                Color = GuiLibrary.Colors.THEMES.RED
+            }
+        },
         Configs = {
             Default = {
                 Selected = true
@@ -26,11 +21,8 @@ if shared.FlashExecuted then
         RainbowSpeed = 0.6,
         GUIKeybind = "RightShift",
         CurrentConfig = "Default",
-        KeybindCaptured = false,
-        PressedKeybindKey = "",
         ToggleNotifications = false,
         Notifications = false,
-        ToggleTooltips = false,
         Objects = {
 
         },
@@ -46,8 +38,7 @@ if shared.FlashExecuted then
                 PURPLE = Color3.fromRGB(110, 139, 212),
                 BLUE = Color3.fromRGB(37, 85, 198),
                 CYAN = Color3.fromRGB(60, 227, 216)
-            },
-            CURRENT_THEME = GuiLibrary.Colors.THEMES.RED
+            }
         }
     }
 
@@ -102,69 +93,65 @@ if shared.FlashExecuted then
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
     gui.ResetOnSpawn = false
     gui.OnTopOfCoreBlur = true
-    if gethui then
-        gui.Parent = gethui()
-    elseif syn and syn.protect_gui then
+    
+    local parent = gethui and gethui() or game:GetService("CoreGui")
+    if syn and syn.protect_gui then
         syn.protect_gui(gui)
-        gui.Parent = game:GetService("CoreGui")
-    else
-        gui.Parent = game:GetService("CoreGui")
     end
+    gui.Parent = parent
 
     GuiLibrary["MainGui"] = gui
 
     local function getFromGithub(scripturl)
-        if not isfile("flash/" .. scripturl) then
-            local suc, res
-            task.delay(15, function()
-                if not res and not errorPopupShown then
-                    errorPopupShown = true
-                    displayErrorPopup("The connection to github is slow...")
+        local filepath = baseDirectory .. scripturl
+        if not isfile(filepath) then
+            local warningShown = false
+            task.spawn(function()
+                local success, _ = pcall(wait, 15)
+                if not isfile(filepath) and not warningShown then
+                    warningShown = true
+                    displayErrorPopup("The connection to GitHub is slow...")
                 end
             end)
-            suc, res = pcall(function()
-                return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/" ..
-                                        scripturl, true)
-            end)
-            if not suc or res == "404: Not Found" then
-                displayErrorPopup("Failed to connect to github : flash/" .. scripturl .. " : " .. res)
-                error(res)
-            end
-            if scripturl:find(".lua") then
+            local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s", scripturl)
+            local success, response = pcall(httpService.RequestAsync, httpService, {
+                Url = url,
+                Method = "GET",
+                Headers = {
+                    ["User-Agent"] = "Roblox/WinInet",
+                },
+            })
+            assert(success and response.Success, "Failed to connect to GitHub: flash/" .. scripturl .. " : " .. response.StatusCode)
+            if scripturl:find("%.lua$") then
                 local cached = readfile(cachedfiles)
-                res = scripturl .. "\n" .. cached .. "\n"
+                response.Body = scripturl .. "\n" .. cached .. "\n" .. response.Body
             end
-            writefile("flash/" .. scripturl, res)
+            writefile(filepath, response.Body)
         end
-        return readfile("flash/" .. scripturl)
-    end
+        return readfile(filepath)
+    end           
 
+    local cachedAssets = {}
     local function downloadAsset(path)
         if not isfile(path) then
-            task.spawn(function()
-                local textlabel = Instance.new("TextLabel")
-                textlabel.Size = UDim2.new(1, 0, 0, 36)
-                textlabel.Text = "Downloading " .. path
-                textlabel.BackgroundTransparency = 1
-                textlabel.TextStrokeTransparency = 0
-                textlabel.TextSize = 30
-                textlabel.Font = Enum.Font.SourceSans
-                textlabel.TextColor3 = Color3.new(1, 1, 1)
-                textlabel.Position = UDim2.new(0, 0, 0, -36)
-                textlabel.Parent = GuiLibrary.MainGui
-                repeat
-                    task.wait()
-                until isfile(path)
-                textlabel:Destroy()
-            end)
-            local suc, req = pcall(function()
-                return getFromGithub(path:gsub("flash/assets", "assets"))
-            end)
-            if suc and req then
-                writefile(path, req)
+            local textlabel = Instance.new("TextLabel")
+            textlabel.Size = UDim2.new(1, 0, 0, 36)
+            textlabel.Text = "Downloading " .. path
+            textlabel.BackgroundTransparency = 1
+            textlabel.TextStrokeTransparency = 0
+            textlabel.TextSize = 30
+            textlabel.Font = Enum.Font.SourceSans
+            textlabel.TextColor3 = Color3.new(1, 1, 1)
+            textlabel.Position = UDim2.new(0, 0, 0, -36)
+            textlabel.Parent = GuiLibrary.MainGui
+
+            local success, asset = pcall(getFromGithub, path:gsub("flash/assets", "assets"))
+            if success and asset then
+                writefile(path, asset)
             else
-                return ""
+                warn("Couldn't download asset " .. path)
             end
+            downloadLabel:Destroy()
         end
         if not cachedAssets[path] then
             cachedAssets[path] = getcustomasset(path)
@@ -293,7 +280,7 @@ if shared.FlashExecuted then
 
     GuiLibrary.SaveSettings = function()
         if loadedsuccessfully then
-            writefile(baseDirectory .. "Configs/" .. game.PlaceId .. ".FlashConfigs.txt", httpService:JSONEncode(GuiLibrary.Configs))
+            writefile(baseDirectory .. "Configs/" .. game.PlaceId .. ".FlashWareConfigs.txt", httpService:JSONEncode(GuiLibrary.Configs))
             local WindowTable = {}
             for i, v in pairs(GuiLibrary.Objects) do
                 if v.Type == "MainWindow" then
@@ -367,7 +354,7 @@ if shared.FlashExecuted then
 
     GuiLibrary.LoadSettings = function(customconfig)
         local success, result = pcall(function()
-            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" .. game.PlaceId .. ".FlashConfigs.txt"))
+            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" .. game.PlaceId .. ".FlashWareConfigs.txt"))
         end)
         if success and type(result) == "table" then
             GuiLibrary.Configs = result
@@ -430,6 +417,9 @@ if shared.FlashExecuted then
                 end
                 local obj = GuiLibrary.Objects[i]
                 if obj then
+                    if v.Type == "" then
+						
+					end
                     ----------- Put here loading FlashConfig data (not UISettings FlashConfig)
                 end
             end
@@ -717,7 +707,7 @@ if shared.FlashExecuted then
                 local ToggleButton = Instance.new("TextButton")
                 ToggleButton.Name = "ToggleButton"
                 ToggleButton.Parent = ToggleFrame
-                ToggleButton.BackgroundColor3 = GuiLibrary.Colors.THEMES.CURRENT_THEME
+                ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
                 ToggleButton.BorderSizePixel = 0
                 ToggleButton.Text = ""
                 ToggleButton.AutoButtonColor = false
@@ -745,7 +735,7 @@ if shared.FlashExecuted then
                     if togglecontroller["Enabled"] then
                         CircleFrame:TweenPosition(UDim2.new(0.45, 0, 0.1, 0), Enum.EasingDirection.InOut,
                             Enum.EasingStyle.Linear, 0.1, true)
-                        ToggleButton.BackgroundColor3 = GuiLibrary.Colors.THEMES.CURRENT_THEME
+                        ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
                     else
                         ToggleButton.BackgroundColor3 = GuiLibrary.Colors.DISABLED
                         CircleFrame:TweenPosition(UDim2.new(0.05, 0, 0.1, 0), Enum.EasingDirection.InOut,
@@ -815,7 +805,7 @@ if shared.FlashExecuted then
 
                 local BarClipping = Instance.new("Frame")
                 BarClipping.Name = "BarClipping"
-                BarClipping.BackgroundColor3 = GuiLibrary.Colors.CURRENT_THEME
+                BarClipping.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
                 BarClipping.Size = UDim2.new(0.5, 0, 1, 0)
                 BarClipping.Position = UDim2.new(0, 0, 0, 0)
                 BarClipping.Parent = Bar
@@ -979,7 +969,7 @@ if shared.FlashExecuted then
         frame2.Parent = image
         local icon = Instance.new("ImageLabel")
         icon.Name = "IconLabel"
-        icon.Image = downloadAsset(customicon and "flash/" .. customicon or "flash/assets/InfoNotification.png")
+        icon.Image = downloadAsset(customicon and baseDirectory .. customicon or "flash/assets/InfoNotification.png")
         icon.BackgroundTransparency = 1
         icon.Position = UDim2.new(0, -6, 0, -6)
         icon.Size = UDim2.new(0, 60, 0, 60)
@@ -1042,21 +1032,28 @@ if shared.FlashExecuted then
     local holdingctrl = false
     local uninjected = false
 
-    GuiLibrary["KeyInputHandler"] = inputService.InputBegan:Connect(function(input1)
+    GuiLibrary["KeyInputHandler"] = inputService.InputBegan:Connect(function(input)
         if inputService:GetFocusedTextBox() == nil then
-            if input1.KeyCode == Enum.KeyCode[GuiLibrary["GUIKeybind"]] and GuiLibrary["KeybindCaptured"] == false then
+            if input.KeyCode == Enum.KeyCode[GuiLibrary["GUIKeybind"]] then
                 mainui.Visible = not mainui.Visible
             end
-            if input1.KeyCode == Enum.KeyCode.Delete and holdingctrl and (not uninjected) then
+            if input.KeyCode == Enum.KeyCode.Delete and holdingctrl and (not uninjected) then
                 GuiLibrary["SelfDestruct"]()
                 uninjected = true
             end
-
-            if input1.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then 
+            if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then 
 				holdingctrl = true
 			end
         end
     end)
+
+    GuiLibrary["KeyInputHandler2"] = inputService.InputEnded:Connect(function(input)
+		if input.KeyCode == Enum.KeyCode.RightAlt then
+            if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then 
+				holdingctrl = false
+            end
+		end
+	end)
 
     searchbar:GetPropertyChangedSignal("Text"):Connect(function()
         if searchbar.Text == "" then

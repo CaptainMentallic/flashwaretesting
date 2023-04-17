@@ -27,29 +27,33 @@ local function displayErrorPopup(text, func)
 end
 
 local function getFromGithub(scripturl)
-    if not isfile("flash/" .. scripturl) then
-        local suc, res
-        task.delay(15, function()
-            if not res and not errorPopupShown then
-                errorPopupShown = true
-                displayErrorPopup("The connection to github is slow...")
+    local filepath = baseDirectory .. scripturl
+    if not isfile(filepath) then
+        local warningShown = false
+        task.spawn(function()
+            local success, _ = pcall(wait, 15)
+            if not isfile(filepath) and not warningShown then
+                warningShown = true
+                displayErrorPopup("The connection to GitHub is slow...")
             end
         end)
-        suc, res = pcall(function()
-            return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/" .. scripturl, true)
-        end)
-        if not suc or res == "404: Not Found" then
-            displayErrorPopup("Failed to connect to github : flash/" .. scripturl .. " : " .. res)
-            error(res)
-        end
-        if scripturl:find(".lua") then
+        local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s", scripturl)
+        local success, response = pcall(http.RequestAsync, http, {
+            Url = url,
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "Roblox/WinInet",
+            },
+        })
+        assert(success and response.Success, "Failed to connect to GitHub: flash/" .. scripturl .. " : " .. response.StatusCode)
+        if scripturl:find("%.lua$") then
             local cached = readfile(cachedfiles)
-            res = scripturl.."\n"..cached.."\n"
+            response.Body = scripturl .. "\n" .. cached .. "\n" .. response.Body
         end
-        writefile("flash/" .. scripturl, res)
+        writefile(filepath, response.Body)
     end
-    return readfile("flash/" .. scripturl)
-end
+    return readfile(filepath)
+end   
 
 if isfolder("flash") then
     if ((not isfile("flash/version.txt")) or readfile("flash/version.txt") < getFromGithub("version.txt")) then

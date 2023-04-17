@@ -52,54 +52,60 @@ local function displayErrorPopup(text, funclist)
 end
 
 local function getFromGithub(scripturl)
-    if not isfile("flash/" .. scripturl) then
-        local suc, res
-        task.delay(15, function()
-            if not res and not errorPopupShown then
-                errorPopupShown = true
-                displayErrorPopup("The connection to github is slow...")
-            end
-        end)
-        suc, res = pcall(function()
-            return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/" .. scripturl, true)
-        end)
-        if not suc or res == "404: Not Found" then
-            displayErrorPopup("Failed to connect to github : flash/" .. scripturl .. " : " .. res)
-            error(res)
-        end
-        if scripturl:find(".lua") then
-            local cached = readfile(cachedfiles)
-            res = scripturl.."\n"..cached.."\n"
-        end
-        writefile("flash/" .. scripturl, res)
-    end
-    return readfile("flash/" .. scripturl)
-end
+	local filepath = baseDirectory .. scripturl
+	if not isfile(filepath) then
+		local warningShown = false
+		task.spawn(function()
+			local success, _ = pcall(wait, 15)
+			if not isfile(filepath) and not warningShown then
+				warningShown = true
+				displayErrorPopup("The connection to GitHub is slow...")
+			end
+		end)
+		local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s", scripturl)
+		local success, response = pcall(http.RequestAsync, http, {
+			Url = url,
+			Method = "GET",
+			Headers = {
+				["User-Agent"] = "Roblox/WinInet",
+			},
+		})
+		assert(success and response.Success, "Failed to connect to GitHub: flash/" .. scripturl .. " : " .. response.StatusCode)
+		if scripturl:find("%.lua$") then
+			local cached = readfile(cachedfiles)
+			response.Body = scripturl .. "\n" .. cached .. "\n" .. response.Body
+		end
+		writefile(filepath, response.Body)
+	end
+	return readfile(filepath)
+end   
 
+local cachedAssets = {}
 local function downloadAsset(path)
 	if not isfile(path) then
-		task.spawn(function()
-			local textlabel = Instance.new("TextLabel")
-			textlabel.Size = UDim2.new(1, 0, 0, 36)
-			textlabel.Text = "Downloading "..path
-			textlabel.BackgroundTransparency = 1
-			textlabel.TextStrokeTransparency = 0
-			textlabel.TextSize = 30
-			textlabel.Font = Enum.Font.SourceSans
-			textlabel.TextColor3 = Color3.new(1, 1, 1)
-			textlabel.Position = UDim2.new(0, 0, 0, -36)
-			textlabel.Parent = GuiLibrary.MainGui
-			repeat task.wait() until isfile(path)
-			textlabel:Destroy()
-		end)
-		local suc, req = pcall(function() return getFromGithub(path:gsub("flash/assets", "assets")) end)
-        if suc and req then
-		    writefile(path, req)
-        else
-            return ""
-        end
+		local textlabel = Instance.new("TextLabel")
+		textlabel.Size = UDim2.new(1, 0, 0, 36)
+		textlabel.Text = "Downloading " .. path
+		textlabel.BackgroundTransparency = 1
+		textlabel.TextStrokeTransparency = 0
+		textlabel.TextSize = 30
+		textlabel.Font = Enum.Font.SourceSans
+		textlabel.TextColor3 = Color3.new(1, 1, 1)
+		textlabel.Position = UDim2.new(0, 0, 0, -36)
+		textlabel.Parent = GuiLibrary.MainGui
+
+		local success, asset = pcall(getFromGithub, path:gsub("flash/assets", "assets"))
+		if success and asset then
+			writefile(path, asset)
+		else
+			warn("Couldn't download asset " .. path)
+		end
+		downloadLabel:Destroy()
 	end
-	return getcustomasset(path) 
+	if not cachedAssets[path] then
+		cachedAssets[path] = getcustomasset(path)
+	end
+	return cachedAssets[path]
 end
 
 assert(not shared.FlashExecuted, "FlashWare Is Already Injected")
