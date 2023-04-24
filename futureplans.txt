@@ -1,0 +1,11 @@
+test guilibrary
+fix mainscript to work for the new guilibrary
+test mainscript and guilibrary functions and everything
+
+work on clicking simulator module
+work on bedwars
+work on universal
+
+
+future modules
+- arsenal
