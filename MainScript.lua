@@ -111,7 +111,7 @@ end
 assert(not shared.FlashExecuted, "FlashWare Is Already Injected")
 shared.FlashExecuted = true
 
-for i,v in pairs({baseDirectory:gsub("/", ""), "flash", "flash/Libraries", "flash/Games", "flash/Configs", baseDirectory.."Configs", "flash/assets"}) do 
+for i,v in pairs({baseDirectory:gsub("/", ""), "flash", "flash/Libraries", "flash/Games", "flash/Configs", baseDirectory.."Configs", "flash/assets", "flash/exports"}) do 
 	if not isfolder(v) then makefolder(v) end
 end
 task.spawn(function()

@@ -1,5 +1,7 @@
-# testing flashware before i add it to the main
+# FlashWareRoblox
 
-use the main repository loadstring for a stable script
+Project I made since I was bored 
 
-use this repository loadstring if you want alot of bugs for the price of more features (which might not work)
+Idea inspired by 7GrandDad
+
+UI inspired from Juul Minecraft Client

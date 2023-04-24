@@ -1,67 +1,65 @@
+local GuiLibrary = {}
+
 if shared.FlashExecuted then
     local Version = readfile("flash/version.txt")
-    local baseDirectory = "flash/"
-    local universalRainbowValue = 0
-    local getcustomasset = getsynasset or getcustomasset or function(location) return "rbxasset://" .. location end
-    local requestfunc = syn and syn.request or http and http.request or http_request or request or function() end
-    local loadedsuccessfully = false
+    local BaseDirectory = "flash/"
+    local RainbowValue = 0
+    local getcustomasset = getsynasset or getcustomasset or function(location)
+        return "rbxasset://" .. location
+    end
+    local LoadedSuccess = false
 
-    local GuiLibrary = {
-        Settings = {
-            CurrentTheme = {
-                Type = "Custom",
-                Color = GuiLibrary.Colors.THEMES.RED
-            }
-        },
-        Configs = {
-            Default = {
-                Selected = true
-            }
-        },
-        RainbowSpeed = 0.6,
-        GUIKeybind = "RightShift",
-        CurrentConfig = "Default",
-        ToggleNotifications = false,
-        Notifications = false,
-        Objects = {
-
-        },
-        Colors = {
-            BACKGROUND_COLOR = Color3.fromRGB(62, 66, 71),
-            ACTIVE_BACKGROUND_COLOR = Color3.fromRGB(76, 79, 87),
-            DIVIDER_COLOR = Color3.fromRGB(101, 106, 116),
-            LABEL_COLOR = Color3.fromRGB(255, 255, 255),
-            DISABLED = Color3.fromRGB(114, 118, 124),
-            THEMES = {
-                RED = Color3.fromRGB(243, 64, 72),
-                ORANGE = Color3.fromRGB(248, 152, 82),
-                PURPLE = Color3.fromRGB(110, 139, 212),
-                BLUE = Color3.fromRGB(37, 85, 198),
-                CYAN = Color3.fromRGB(60, 227, 216)
-            }
+    GuiLibrary.Settings = {
+        CurrentTheme = {
+            Type = "Custom",
+            Color = GuiLibrary.Colors.THEMES.RED
         }
     }
 
-    local inputService = game:GetService("UserInputService")
-    local httpService = game:GetService("HttpService")
-    local tweenService = game:GetService("TweenService")
-    local guiService = game:GetService("GuiService")
-    local textService = game:GetService("TextService")
-
-    coroutine.resume(coroutine.create(function()
-        repeat
-            task.wait(0.01)
-            universalRainbowValue = universalRainbowValue + 0.005 * GuiLibrary["RainbowSpeed"]
-            if universalRainbowValue > 1 then
-                universalRainbowValue = universalRainbowValue - 1
-            end
-        until not shared.FlashExecuted
-    end))
-
-    local capturedslider = nil
-    local mainui = {
-        ["Visible"] = true
+    GuiLibrary.Configs = {
+        Default = {
+            ConfigEnabled = true
+        }
     }
+
+    GuiLibrary.RainbowSpeed = 0.5
+    GuiLibrary.GUIKeybind = "RightShift"
+    GuiLibrary.CurrentConfig = "Default"
+    GuiLibrary.ToggleNotifications = false
+    GuiLibrary.Notifications = false
+    GuiLibrary.Objects = {}
+
+    GuiLibrary.Colors = {
+        BACKGROUND_COLOR = Color3.fromRGB(62, 66, 71),
+        ACTIVE_BACKGROUND_COLOR = Color3.fromRGB(76, 79, 87),
+        DIVIDER_COLOR = Color3.fromRGB(101, 106, 116),
+        LABEL_COLOR = Color3.fromRGB(255, 255, 255),
+        DISABLED = Color3.fromRGB(114, 118, 124),
+        THEMES = {
+            RED = Color3.fromRGB(243, 64, 72),
+            ORANGE = Color3.fromRGB(248, 152, 82),
+            PURPLE = Color3.fromRGB(110, 139, 212),
+            BLUE = Color3.fromRGB(37, 85, 198),
+            CYAN = Color3.fromRGB(60, 227, 216),
+            RAINBOW = Color3.fromHSV(RainbowValue, 1, 1)
+        }
+    }
+
+    local InputService = game:GetService("UserInputService")
+    local HttpService = game:GetService("HttpService")
+    local TweenService = game:GetService("TweenService")
+    local GuiService = game:GetService("GuiService")
+    local TextService = game:GetService("TextService")
+
+    task.spawn(function()
+        while shared.FlashExecuted do
+            RainbowValue = RainbowValue + 0.01 * GuiLibrary["RainbowSpeed"]
+            if RainbowValue > 1 then
+                RainbowValue = RainbowValue - 1
+            end
+            task.wait(0.025)
+        end
+    end)
 
     local function randomString()
         local randomlength = math.random(10, 100)
@@ -87,23 +85,8 @@ if shared.FlashExecuted then
         return x, y, xscale, (y / absSize.Y), xscale2
     end
 
-    local gui = Instance.new("ScreenGui")
-    gui.Name = randomString()
-    gui.DisplayOrder = 999
-    gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-    gui.ResetOnSpawn = false
-    gui.OnTopOfCoreBlur = true
-    
-    local parent = gethui and gethui() or game:GetService("CoreGui")
-    if syn and syn.protect_gui then
-        syn.protect_gui(gui)
-    end
-    gui.Parent = parent
-
-    GuiLibrary["MainGui"] = gui
-
     local function getFromGithub(scripturl)
-        local filepath = baseDirectory .. scripturl
+        local filepath = BaseDirectory .. scripturl
         if not isfile(filepath) then
             local warningShown = false
             task.spawn(function()
@@ -113,15 +96,17 @@ if shared.FlashExecuted then
                     displayErrorPopup("The connection to GitHub is slow...")
                 end
             end)
-            local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s", scripturl)
-            local success, response = pcall(httpService.RequestAsync, httpService, {
+            local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s",
+                scripturl)
+            local success, response = pcall(HttpService.RequestAsync, HttpService, {
                 Url = url,
                 Method = "GET",
                 Headers = {
-                    ["User-Agent"] = "Roblox/WinInet",
-                },
+                    ["User-Agent"] = "Roblox/WinInet"
+                }
             })
-            assert(success and response.Success, "Failed to connect to GitHub: flash/" .. scripturl .. " : " .. response.StatusCode)
+            assert(success and response.Success,
+                "Failed to connect to GitHub: flash/" .. scripturl .. " : " .. response.StatusCode)
             if scripturl:find("%.lua$") then
                 local cached = readfile(cachedfiles)
                 response.Body = scripturl .. "\n" .. cached .. "\n" .. response.Body
@@ -129,7 +114,7 @@ if shared.FlashExecuted then
             writefile(filepath, response.Body)
         end
         return readfile(filepath)
-    end           
+    end
 
     local cachedAssets = {}
     local function downloadAsset(path)
@@ -159,6 +144,66 @@ if shared.FlashExecuted then
         return cachedAssets[path]
     end
 
+    local function dragGUI(gui)
+        task.spawn(function()
+            local dragging
+            local dragInput
+            local dragStart = Vector3.new(0, 0, 0)
+            local startPos
+            local function update(input)
+                local delta = input.Position - dragStart
+                local Position = UDim2.new(startPos.X.Scale,
+                    startPos.X.Offset + (delta.X * (1 / GuiLibrary["MainRescale"].Scale)), startPos.Y.Scale,
+                    startPos.Y.Offset + (delta.Y * (1 / GuiLibrary["MainRescale"].Scale)))
+                TweenService:Create(gui, TweenInfo.new(.20), {
+                    Position = Position
+                }):Play()
+            end
+            gui.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType ==
+                    Enum.UserInputType.Touch and dragging == false then
+                    dragStart = input.Position
+                    local delta = (dragStart - Vector3.new(gui.AbsolutePosition.X, gui.AbsolutePosition.Y, 0)) *
+                                      (1 / GuiLibrary["MainRescale"].Scale)
+                    if delta.Y <= 40 then
+                        dragging = mainui.Visible
+                        startPos = gui.Position
+
+                        input.Changed:Connect(function()
+                            if input.UserInputState == Enum.UserInputState.End then
+                                dragging = false
+                            end
+                        end)
+                    end
+                end
+            end)
+            gui.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType ==
+                    Enum.UserInputType.Touch then
+                    dragInput = input
+                end
+            end)
+            InputService.InputChanged:Connect(function(input)
+                if input == dragInput and dragging then
+                    update(input)
+                end
+            end)
+        end)
+    end
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = randomString()
+    gui.DisplayOrder = 999
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    gui.ResetOnSpawn = false
+    gui.OnTopOfCoreBlur = true
+
+    local parent = gethui and gethui() or game:GetService("CoreGui")
+    if syn and syn.protect_gui then
+        syn.protect_gui(gui)
+    end
+    gui.Parent = parent
+    GuiLibrary["MainGui"] = gui
     GuiLibrary["UpdateHudEvent"] = Instance.new("BindableEvent")
     GuiLibrary["SelfDestructEvent"] = Instance.new("BindableEvent")
     GuiLibrary["LoadSettingsEvent"] = Instance.new("BindableEvent")
@@ -174,8 +219,8 @@ if shared.FlashExecuted then
     local mainui = Instance.new("Frame")
     mainui.Name = "MainUI"
     mainui.Size = UDim2.new(1, 0, 1, 0)
-    scaledgui.AnchorPoint = Vector2.new(0.5, 0.5)
-    scaledgui.Position = UDim2.new(0.5, 0, 0.5, 0)
+    mainui.AnchorPoint = Vector2.new(0.5, 0.5)
+    mainui.Position = UDim2.new(0.5, 0, 0.5, 0)
     mainui.BackgroundTransparency = 1
     mainui.Visible = false
     mainui.Parent = scaledgui
@@ -219,7 +264,7 @@ if shared.FlashExecuted then
     notificationwindow.Size = UDim2.new(1, 0, 1, 0)
     notificationwindow.Parent = GuiLibrary["MainGui"]
 
-    local vTextSize = textService:GetTextSize("v" .. Version, 25, Enum.Font.DenkOne, Vector2.new(999999, 999999))
+    local vTextSize = TextService:GetTextSize("v" .. Version, 25, Enum.Font.Arial, Vector2.new(999999, 999999))
 
     local hudgui = Instance.new("Frame")
     hudgui.Name = "HudGui"
@@ -231,56 +276,10 @@ if shared.FlashExecuted then
     GuiLibrary["MainRescale"] = Instance.new("UIScale")
     GuiLibrary["MainRescale"].Parent = scaledgui
 
-    local function dragGUI(gui)
-        task.spawn(function()
-            local dragging
-            local dragInput
-            local dragStart = Vector3.new(0, 0, 0)
-            local startPos
-            local function update(input)
-                local delta = input.Position - dragStart
-                local Position = UDim2.new(startPos.X.Scale,
-                    startPos.X.Offset + (delta.X * (1 / GuiLibrary["MainRescale"].Scale)), startPos.Y.Scale,
-                    startPos.Y.Offset + (delta.Y * (1 / GuiLibrary["MainRescale"].Scale)))
-                tweenService:Create(gui, TweenInfo.new(.20), {
-                    Position = Position
-                }):Play()
-            end
-            gui.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType ==
-                    Enum.UserInputType.Touch and dragging == false then
-                    dragStart = input.Position
-                    local delta = (dragStart - Vector3.new(gui.AbsolutePosition.X, gui.AbsolutePosition.Y, 0)) *
-                                      (1 / GuiLibrary["MainRescale"].Scale)
-                    if delta.Y <= 40 then
-                        dragging = mainui.Visible
-                        startPos = gui.Position
-
-                        input.Changed:Connect(function()
-                            if input.UserInputState == Enum.UserInputState.End then
-                                dragging = false
-                            end
-                        end)
-                    end
-                end
-            end)
-            gui.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType ==
-                    Enum.UserInputType.Touch then
-                    dragInput = input
-                end
-            end)
-            inputService.InputChanged:Connect(function(input)
-                if input == dragInput and dragging then
-                    update(input)
-                end
-            end)
-        end)
-    end
-
     GuiLibrary.SaveSettings = function()
-        if loadedsuccessfully then
-            writefile(baseDirectory .. "Configs/" .. game.PlaceId .. ".FlashWareConfigs.txt", httpService:JSONEncode(GuiLibrary.Configs))
+        if LoadedSuccess then
+            writefile(BaseDirectory .. "Configs/" .. game.PlaceId .. ".FlashWareConfigs.txt",
+                HttpService:JSONEncode(GuiLibrary.Configs))
             local WindowTable = {}
             for i, v in pairs(GuiLibrary.Objects) do
                 if v.Type == "MainWindow" then
@@ -293,7 +292,7 @@ if shared.FlashExecuted then
                 if v.Type == "ControlFrame" then
                     WindowTable[i] = {
                         ["Type"] = "ControlFrame",
-                        ["Name"] = v.Object.Name,
+                        ["Name"] = i,
                         ["Visible"] = v.Object.Visible,
                         ["Position"] = v.Object.Position
                     }
@@ -301,14 +300,15 @@ if shared.FlashExecuted then
                 if v.Type == "Tab" then
                     WindowTable[i] = {
                         ["Type"] = "Tab",
-                        ["Name"] = v.Object.Name,
+                        ["Name"] = i,
                         ["LayoutOrder"] = v.Object.LayoutOrder,
+                        ["Controller"] = v["Controller"]
                     }
                 end
                 if (v.Type == "ToggleButton") then
                     WindowTable[i] = {
                         ["Type"] = "ToggleButton",
-                        ["Name"] = v.Object.Name,
+                        ["Name"] = i,
                         ["LayoutOrder"] = v.Object.LayoutOrder,
                         ["Visible"] = v.Object.Visible,
                         ["Column"] = v.Object.Parent.Name,
@@ -319,7 +319,7 @@ if shared.FlashExecuted then
                 if v.Type == "Slider" then
                     WindowTable[i] = {
                         ["Type"] = "Slider",
-                        ["Name"] = v.Object.Name,
+                        ["Name"] = i,
                         ["LayoutOrder"] = v.Object.LayoutOrder,
                         ["Visible"] = v.Object.Visible,
                         ["Column"] = v.Object.Parent.Name,
@@ -330,7 +330,7 @@ if shared.FlashExecuted then
                 if v.Type == "Divider" then
                     WindowTable[i] = {
                         ["Type"] = "Slider",
-                        ["Name"] = v.Object.Name,
+                        ["Name"] = i,
                         ["LayoutOrder"] = v.Object.LayoutOrder,
                         ["Column"] = v.Object.Parent.Name,
                         ["ControlFrame"] = v.Object.Parent.Parent.Name
@@ -339,7 +339,7 @@ if shared.FlashExecuted then
                 -- if v.Type == "Dropdown" then
                 --     WindowTable[i] = {
                 --         ["Type"] = "Dropdown",
-                --         ["Value"] = v["controller"]["Value"]
+                --         ["SelectedValue"] = v["Controller"]["SelectedValue"]
                 --     }
                 -- end
             end
@@ -347,32 +347,36 @@ if shared.FlashExecuted then
                 ["Type"] = "GUIKeybind",
                 ["Value"] = GuiLibrary["GUIKeybind"]
             }
-            writefile(baseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." .. game.PlaceId .. ".FlashConfig.txt", httpService:JSONEncode(GuiLibrary.Settings))
-            writefile(baseDirectory .. "Configs/" .. game.GameId .. ".UISettings.FlashConfig.txt", httpService:JSONEncode(WindowTable))
+            writefile(BaseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." .. game.PlaceId ..
+                          ".FlashConfig.txt", HttpService:JSONEncode(GuiLibrary.Settings))
+            writefile(BaseDirectory .. "Configs/" .. game.GameId .. ".UISettings.FlashConfig.txt",
+                HttpService:JSONEncode(WindowTable))
         end
     end
 
     GuiLibrary.LoadSettings = function(customconfig)
         local success, result = pcall(function()
-            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" .. game.PlaceId .. ".FlashWareConfigs.txt"))
+            return HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. game.PlaceId ..
+                                                       ".FlashWareConfigs.txt"))
         end)
         if success and type(result) == "table" then
             GuiLibrary.Configs = result
         end
         for i, v in pairs(GuiLibrary.Configs) do
-            if v.Selected then
+            if v.ConfigEnabled then
                 GuiLibrary.CurrentConfig = i
             end
         end
         if customconfig then
-            GuiLibrary.Configs[GuiLibrary.CurrentConfig]["Selected"] = false
+            GuiLibrary.Configs[GuiLibrary.CurrentConfig]["ConfigEnabled"] = false
             GuiLibrary.Configs[customconfig] = GuiLibrary.Configs[customconfig] or {
-                ["Selected"] = true
+                ["ConfigEnabled"] = true
             }
             GuiLibrary.CurrentConfig = customconfig
         end
         local success1, result1 = pcall(function()
-            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" .. (game.GameId) .. ".UISettings.FlashConfig.txt"))
+            return HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. (game.GameId) ..
+                                                       ".UISettings.FlashConfig.txt"))
         end)
         if success1 and type(result1) == "table" then
             for i, v in pairs(result1) do
@@ -407,7 +411,8 @@ if shared.FlashExecuted then
             end
         end
         local success2, result2 = pcall(function()
-            return httpService:JSONDecode(readfile(baseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." .. game.PlaceId .. ".FlashConfig.txt"))
+            return HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." ..
+                                                       game.PlaceId .. ".FlashConfig.txt"))
         end)
         if success2 and type(result2) == "table" then
             GuiLibrary["LoadSettingsEvent"]:Fire(result)
@@ -418,19 +423,20 @@ if shared.FlashExecuted then
                 local obj = GuiLibrary.Objects[i]
                 if obj then
                     if v.Type == "" then
-						
-					end
+
+                    end
                     ----------- Put here loading FlashConfig data (not UISettings FlashConfig)
                 end
             end
         end
-        loadedsuccessfully = true
+        LoadedSuccess = true
     end
 
     GuiLibrary["SwitchConfig"] = function(configname)
-        GuiLibrary.Configs[GuiLibrary.CurrentConfig]["Selected"] = false
-        GuiLibrary.Configs[configname]["Selected"] = true
-        if (not isfile(baseDirectory .. "Configs/" .. (configname == "Default" and "" or configname) .. game.PlaceId .. ".FlashConfig.txt")) then
+        GuiLibrary.Configs[GuiLibrary.CurrentConfig]["ConfigEnabled"] = false
+        GuiLibrary.Configs[configname]["ConfigEnabled"] = true
+        if (not isfile(BaseDirectory .. "Configs/" .. (configname == "Default" and "" or configname) .. game.PlaceId ..
+                           ".FlashConfig.txt")) then
             local config = GuiLibrary.CurrentConfig
             GuiLibrary.CurrentConfig = configname
             GuiLibrary.SaveSettings()
@@ -580,9 +586,9 @@ if shared.FlashExecuted then
         DefaultControlsColumn3.Position = UDim2.new(0.67, 0, 0.022, 0)
         DefaultControlsColumn3.Parent = DefaultControlsFrame
 
-        repeat 
+        repeat
             local oldValue = shared.CurrentLoad
-            task.wait(0.5)
+            task.wait(0.8)
             if oldValue ~= shared.CurrentLoad then
                 GameLabel.Text = shared.CurrentLoad
                 GameLabelShadow.Text = shared.CurrentLoad
@@ -594,19 +600,18 @@ if shared.FlashExecuted then
         GuiLibrary.Objects["GUIWindow"] = {
             ["ControlFrames"] = {},
             ["MainWindow"] = window,
-            ["Type"] = "Window",
-            ["Controller"] = windowcontroller,
-            ["SavedItems"] = {}
+            ["Type"] = "MainWindow",
+            ["Controller"] = windowcontroller
         }
 
-        windowcontroller["CreateTab"] = function(args) -- Name Order Icon
+        windowcontroller["CreateTab"] = function(argsmain) -- Name Order Icon
             local tabcontroller = {}
 
             local frame = Instance.new("Frame")
-            frame.Name = args["Name"]
+            frame.Name = argsmain["Name"]
             frame.BackgroundColor3 = GuiLibrary.Colors.BACKGROUND_COLOR
             frame.ZIndex = 2
-            frame.LayoutOrder = args["Order"]
+            frame.LayoutOrder = argsmain["Order"]
             frame.Parent = TabsFrame
 
             local framecorner = Instance.new("UICorner")
@@ -622,23 +627,23 @@ if shared.FlashExecuted then
             tabbutton.Parent = frame
 
             local tabimage = Instance.new("ImageLabel")
-            tabimage.Name = args["Name"] .. "Icon"
+            tabimage.Name = argsmain["Name"] .. "Icon"
             tabimage.BackgroundTransparency = 1
             tabimage.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
             tabimage.Size = UDim2.new(0.28, 0, 0.525, 0)
             tabimage.Position = UDim2.new(0.297, 0, 0.297, 0)
-            tabimage.Image = downloadAsset(args["Icon"])
+            tabimage.Image = downloadAsset(argsmain["Icon"])
             tabimage.ZIndex = 2
             tabimage.Parent = frame
 
             local tablabel = Instance.new("TextLabel")
-            tablabel.Name = args["Name"] .. "Label"
+            tablabel.Name = argsmain["Name"] .. "Label"
             tablabel.BackgroundTransparency = 1
             tablabel.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
             tablabel.Size = UDim2.new(0.94, 0, 0.262, 0)
             tablabel.Position = UDim2.new(-0.03, 0, 0.043, 0)
             tablabel.Font = Enum.Font.GothamBold
-            tablabel.Text = args["Name"]
+            tablabel.Text = argsmain["Name"]
             tablabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
             tablabel.TextSize = 18
             tablabel.TextScaled = true
@@ -652,9 +657,13 @@ if shared.FlashExecuted then
             tablabelconstraint.Parent = tablabel
 
             local newframe = DefaultControlsFrame:Clone()
-            newframe.Name = args["Name"] .. "ControlsFrame"
+            newframe.Name = argsmain["Name"] .. "ControlsFrame"
             newframe.Parent = window
-            GuiLibrary.Objects["GUIWindow"]["ControlFrames"][args["Name"] .. "ControlsFrame"] = newframe
+
+            GuiLibrary.Objects[argsmain["Name"] .. "ControlFrame"] = {
+                ["Type"] = "ControlFrame",
+                ["Object"] = frame
+            }
 
             tabbutton.MouseButton1Click:Connect(function()
                 for _, frame in pairs(GuiLibrary.Objects["GUIWindow"]["ControlFrames"]) do
@@ -678,200 +687,228 @@ if shared.FlashExecuted then
                 divider.BackgroundColor3 = GuiLibrary.Colors.DIVIDER_COLOR
                 divider.BorderSizePixel = 0
                 divider.Parent = column
+
+                GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Divider"] = {
+                    ["Type"] = "Divider",
+                    ["Object"] = frame
+                }
             end
 
-            tabcontroller["CreateToggle"] = function(args) -- Column LabelText DefaultToggle | Returns function with the bool
-                local togglecontroller = {}
-                local column = newframe:FindFirstChild("Column" .. args["Column"])
+            tabcontroller["CreateToggle"] =
+                function(args) -- Column LabelText DefaultToggle | Returns function with the bool
+                    local togglecontroller = {}
+                    local column = newframe:FindFirstChild("Column" .. args["Column"])
 
-                local ToggleFrame = Instance.new("Frame")
-                ToggleFrame.Name = "ToggleFrame"
-                ToggleFrame.Size = UDim2.new(0, 163, 0, 29)
-                ToggleFrame.BackgroundTransparency = 1
-                ToggleFrame.BorderSizePixel = 0
-                ToggleFrame.Parent = column
+                    local ToggleFrame = Instance.new("Frame")
+                    ToggleFrame.Name = "ToggleFrame"
+                    ToggleFrame.Size = UDim2.new(0, 163, 0, 29)
+                    ToggleFrame.BackgroundTransparency = 1
+                    ToggleFrame.BorderSizePixel = 0
+                    ToggleFrame.Parent = column
 
-                local Label = Instance.new("TextLabel")
-                Label.Name = "Label"
-                Label.Parent = ToggleButton
-                Label.BackgroundTransparency = 1
-                Label.Size = UDim2.new(0.706, 0, 0.818, 0)
-                Label.Position = UDim2.new(0.294, 0, 0.091, 0)
-                Label.Font = Enum.Font.Arial
-                Label.Text = args["LabelText"]
-                Label.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
-                Label.TextSize = 21
-                Label.TextWrapped = true
-                Label.TextXAlignment = Enum.TextXAlignment.Left
+                    local Label = Instance.new("TextLabel")
+                    Label.Name = "Label"
+                    Label.Parent = ToggleButton
+                    Label.BackgroundTransparency = 1
+                    Label.Size = UDim2.new(0.706, 0, 0.818, 0)
+                    Label.Position = UDim2.new(0.294, 0, 0.091, 0)
+                    Label.Font = Enum.Font.Arial
+                    Label.Text = args["LabelText"]
+                    Label.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
+                    Label.TextSize = 21
+                    Label.TextWrapped = true
+                    Label.TextXAlignment = Enum.TextXAlignment.Left
 
-                local ToggleButton = Instance.new("TextButton")
-                ToggleButton.Name = "ToggleButton"
-                ToggleButton.Parent = ToggleFrame
-                ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
-                ToggleButton.BorderSizePixel = 0
-                ToggleButton.Text = ""
-                ToggleButton.AutoButtonColor = false
-                ToggleButton.Size = UDim2.new(0.221, 0, 0.758, 0)
-                ToggleButton.Position = UDim2.new(0.011, 0, 0.121, 0)
+                    local ToggleButton = Instance.new("TextButton")
+                    ToggleButton.Name = "ToggleButton"
+                    ToggleButton.Parent = ToggleFrame
+                    ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
+                    ToggleButton.BorderSizePixel = 0
+                    ToggleButton.Text = ""
+                    ToggleButton.AutoButtonColor = false
+                    ToggleButton.Size = UDim2.new(0.221, 0, 0.758, 0)
+                    ToggleButton.Position = UDim2.new(0.011, 0, 0.121, 0)
 
-                local ToggleButtonCorner = Instance.new("UICorner")
-                ToggleButtonCorner.CornerRadius = UDim.new(0.5, 0)
-                ToggleButtonCorner.Parent = ToggleButton
+                    local ToggleButtonCorner = Instance.new("UICorner")
+                    ToggleButtonCorner.CornerRadius = UDim.new(0.5, 0)
+                    ToggleButtonCorner.Parent = ToggleButton
 
-                local CircleFrame = Instance.new("Frame")
-                CircleFrame.Parent = ToggleButton
-                CircleFrame.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
-                CircleFrame.BorderSizePixel = 0
-                CircleFrame.Size = UDim2.new(0.5, 0, 0.82, 0)
-                CircleFrame.Position = UDim2.new(0.45, 0, 0.09, 0)
+                    local CircleFrame = Instance.new("Frame")
+                    CircleFrame.Parent = ToggleButton
+                    CircleFrame.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
+                    CircleFrame.BorderSizePixel = 0
+                    CircleFrame.Size = UDim2.new(0.5, 0, 0.82, 0)
+                    CircleFrame.Position = UDim2.new(0.45, 0, 0.09, 0)
 
-                local CircleFrameCorner = Instance.new("UICorner")
-                CircleFrameCorner.CornerRadius = UDim.new(1, 0)
-                CircleFrameCorner.Parent = CircleFrame
+                    local CircleFrameCorner = Instance.new("UICorner")
+                    CircleFrameCorner.CornerRadius = UDim.new(1, 0)
+                    CircleFrameCorner.Parent = CircleFrame
 
-                togglecontroller["Toggle"] = function(toggle)
-                    togglecontroller["Enabled"] = toggle
+                    togglecontroller["Toggle"] = function(toggle)
+                        togglecontroller["Enabled"] = toggle
 
-                    if togglecontroller["Enabled"] then
-                        CircleFrame:TweenPosition(UDim2.new(0.45, 0, 0.1, 0), Enum.EasingDirection.InOut,
-                            Enum.EasingStyle.Linear, 0.1, true)
-                        ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
-                    else
-                        ToggleButton.BackgroundColor3 = GuiLibrary.Colors.DISABLED
-                        CircleFrame:TweenPosition(UDim2.new(0.05, 0, 0.1, 0), Enum.EasingDirection.InOut,
-                            Enum.EasingStyle.Linear, 0.1, true)
+                        if togglecontroller["Enabled"] then
+                            CircleFrame:TweenPosition(UDim2.new(0.45, 0, 0.1, 0), Enum.EasingDirection.InOut,
+                                Enum.EasingStyle.Linear, 0.1, true)
+                            ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
+                        else
+                            ToggleButton.BackgroundColor3 = GuiLibrary.Colors.DISABLED
+                            CircleFrame:TweenPosition(UDim2.new(0.05, 0, 0.1, 0), Enum.EasingDirection.InOut,
+                                Enum.EasingStyle.Linear, 0.1, true)
+                        end
+
+                        args["Function"](togglecontroller["Enabled"])
                     end
 
-                    args["Function"](togglecontroller["Enabled"])
-                end
+                    togglecontroller["Toggle"](args["DefaultToggle"])
 
-                togglecontroller["Toggle"](args["DefaultToggle"])
-
-                ToggleFrame.MouseButton1Click:Connect(function()
-                    togglecontroller["Toggle"](not togglecontroller["Enabled"])
-                end)
-                return togglecontroller
-            end
-
-            tabcontroller["CreateSlider"] = function(args) -- DefaultValue Min Max | Returns function with the current slider value
-                local slidercontroller = {}
-                local column = newframe:FindFirstChild("Column" .. args["Column"])
-
-                local SliderFrame = Instance.new("Frame")
-                SliderFrame.Name = "SliderFrame"
-                SliderFrame.BackgroundTransparency = 1
-                SliderFrame.BorderSizePixel = 0
-                SliderFrame.LayoutOrder = 3
-                SliderFrame.Size = UDim2.new(0, 153, 0, 33)
-                SliderFrame.ZIndex = 0
-                SliderFrame.Parent = column
-
-                local Bar = Instance.new("Frame")
-                Bar.Name = "Bar"
-                Bar.BackgroundColor3 = Color3.fromRGB(64, 67, 72)
-                Bar.Size = UDim2.new(1, 0, 0.259, 0)
-                Bar.Position = UDim2.new(0, 0, 0.479, 0)
-                Bar.Parent = SliderFrame
-
-                local BarCorner = Instance.new("UICorner")
-                BarCorner.CornerRadius = UDim.new(1, 0)
-                BarCorner.Parent = Bar
-
-                local Dragger = Instance.new("TextButton")
-                Dragger.Name = "Dragger"
-                Dragger.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
-                Dragger.BorderSizePixel = 0
-                Dragger.Size = UDim2.new(0.05, 0, 2, 0)
-                Dragger.Position = UDim2.new(0.45, 0, -0.585, 0)
-                Dragger.ZIndex = 2
-                Dragger.AutoButtonColor = false
-                Dragger.Text = ""
-                Dragger.Parent = Bar
-
-                local DraggerCorner = Instance.new("UICorner")
-                DraggerCorner.CornerRadius = UDim.new(1, 0)
-                DraggerCorner.Parent = Dragger
-
-                local ValueLabel = Instance.new("TextLabel")
-                ValueLabel.Name = "Value"
-                ValueLabel.BackgroundTransparency = 1
-                ValueLabel.Size = UDim2.new(1.377, 0, 0.243, 0)
-                ValueLabel.Position = UDim2.new(-0.2, 0, -0.5, 0)
-                ValueLabel.Font = Enum.Font.ArialBold
-                ValueLabel.Text = "0"
-                ValueLabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
-                ValueLabel.TextSize = 10
-                ValueLabel.Parent = Dragger
-
-                local BarClipping = Instance.new("Frame")
-                BarClipping.Name = "BarClipping"
-                BarClipping.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
-                BarClipping.Size = UDim2.new(0.5, 0, 1, 0)
-                BarClipping.Position = UDim2.new(0, 0, 0, 0)
-                BarClipping.Parent = Bar
-
-                local ClippingCorner = Instance.new("UICorner")
-                ClippingCorner.CornerRadius = UDim.new(1, 0)
-                ClippingCorner.Parent = BarClipping
-
-                slidercontroller["SetValue"] = function(value)
-                    slidercontroller["Value"] = value
-                    local valRange = args["Max"] - args["Min"]
-                    local normalizedValue = (value - args["Min"]) / valRange
-                    local clampedValue = math.clamp(normalizedValue, 0.02, 0.97)
-                    BarClipping.Size = UDim2.new(clampedValue, 0, 1, 0)
-
-                    ValueLabel.Text = slidercontroller["Value"] .. ".0 "
-
-                    args["Function"](value)
-                end
-
-                slidercontroller["SetValue"](args["DefaultValue"])
-
-                function updateSlider()
-                    local x, y, xscale = CalculateRelativePosition(Bar, inputService:GetMouseLocation())
-                    local diff = (args["Max"] - args["Min"])
-                    local value = math.floor(args["Min"] + (diff * xscale))
-                
-                    slidercontroller["SetValue"](value)
-                    ValueLabel.Text = tostring(slidercontroller["Value"])
-                
-                    local xscale2 = math.clamp(xscale, 0.02, 1)
-                    BarClipping.Size = UDim2.new(xscale2, 0, 1, 0)
-                    
-                    local yDraggerPos = UDim.new(-0.585, 0)
-                    local xDraggerPos = UDim.new((xscale2 - 0.05), 0)
-                
-                    Dragger.Position = UDim2.new(xDraggerPos, yDraggerPos)
-                end
-
-                Dragger.MouseButton1Down:Connect(function()
-                    updateSlider()
-
-                    local moved
-                    local stopped
-                    moved = inputService.InputChanged:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseMovement then
-                            updateSlider()
-                        end
+                    ToggleFrame.MouseButton1Click:Connect(function()
+                        togglecontroller["Toggle"](not togglecontroller["Enabled"])
                     end)
-                    stopped = inputService.InputEnded:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                            moved:Disconnect()
-                            stopped:Disconnect()
-                        end
+
+                    GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Toggle"] = {
+                        ["Type"] = "ToggleButton",
+                        ["Object"] = frame,
+                        ["Controller"] = togglecontroller
+                    }
+                    return togglecontroller
+                end
+
+            tabcontroller["CreateSlider"] =
+                function(args) -- DefaultValue Min Max | Returns function with the current slider value
+                    local slidercontroller = {}
+                    local column = newframe:FindFirstChild("Column" .. args["Column"])
+
+                    local SliderFrame = Instance.new("Frame")
+                    SliderFrame.Name = "SliderFrame"
+                    SliderFrame.BackgroundTransparency = 1
+                    SliderFrame.BorderSizePixel = 0
+                    SliderFrame.LayoutOrder = 3
+                    SliderFrame.Size = UDim2.new(0, 153, 0, 33)
+                    SliderFrame.ZIndex = 0
+                    SliderFrame.Parent = column
+
+                    local Bar = Instance.new("Frame")
+                    Bar.Name = "Bar"
+                    Bar.BackgroundColor3 = Color3.fromRGB(64, 67, 72)
+                    Bar.Size = UDim2.new(1, 0, 0.259, 0)
+                    Bar.Position = UDim2.new(0, 0, 0.479, 0)
+                    Bar.Parent = SliderFrame
+
+                    local BarCorner = Instance.new("UICorner")
+                    BarCorner.CornerRadius = UDim.new(1, 0)
+                    BarCorner.Parent = Bar
+
+                    local Dragger = Instance.new("TextButton")
+                    Dragger.Name = "Dragger"
+                    Dragger.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
+                    Dragger.BorderSizePixel = 0
+                    Dragger.Size = UDim2.new(0.05, 0, 2, 0)
+                    Dragger.Position = UDim2.new(0.45, 0, -0.585, 0)
+                    Dragger.ZIndex = 2
+                    Dragger.AutoButtonColor = false
+                    Dragger.Text = ""
+                    Dragger.Parent = Bar
+
+                    local DraggerCorner = Instance.new("UICorner")
+                    DraggerCorner.CornerRadius = UDim.new(1, 0)
+                    DraggerCorner.Parent = Dragger
+
+                    local ValueLabel = Instance.new("TextLabel")
+                    ValueLabel.Name = "Value"
+                    ValueLabel.BackgroundTransparency = 1
+                    ValueLabel.Size = UDim2.new(1.377, 0, 0.243, 0)
+                    ValueLabel.Position = UDim2.new(-0.2, 0, -0.5, 0)
+                    ValueLabel.Font = Enum.Font.ArialBold
+                    ValueLabel.Text = "0"
+                    ValueLabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
+                    ValueLabel.TextSize = 10
+                    ValueLabel.Parent = Dragger
+
+                    local BarClipping = Instance.new("Frame")
+                    BarClipping.Name = "BarClipping"
+                    BarClipping.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
+                    BarClipping.Size = UDim2.new(0.5, 0, 1, 0)
+                    BarClipping.Position = UDim2.new(0, 0, 0, 0)
+                    BarClipping.Parent = Bar
+
+                    local ClippingCorner = Instance.new("UICorner")
+                    ClippingCorner.CornerRadius = UDim.new(1, 0)
+                    ClippingCorner.Parent = BarClipping
+
+                    slidercontroller["SetValue"] = function(value)
+                        slidercontroller["Value"] = value
+                        local valRange = args["Max"] - args["Min"]
+                        local normalizedValue = (value - args["Min"]) / valRange
+                        local clampedValue = math.clamp(normalizedValue, 0.02, 0.97)
+                        BarClipping.Size = UDim2.new(clampedValue, 0, 1, 0)
+
+                        ValueLabel.Text = slidercontroller["Value"] .. ".0 "
+
+                        args["Function"](value)
+                    end
+
+                    slidercontroller["SetValue"](args["DefaultValue"])
+
+                    function updateSlider()
+                        local x, y, xscale = CalculateRelativePosition(Bar, InputService:GetMouseLocation())
+                        local diff = (args["Max"] - args["Min"])
+                        local value = math.floor(args["Min"] + (diff * xscale))
+
+                        slidercontroller["SetValue"](value)
+                        ValueLabel.Text = tostring(slidercontroller["Value"])
+
+                        local xscale2 = math.clamp(xscale, 0.02, 1)
+                        BarClipping.Size = UDim2.new(xscale2, 0, 1, 0)
+
+                        local yDraggerPos = UDim.new(-0.585, 0)
+                        local xDraggerPos = UDim.new((xscale2 - 0.05), 0)
+
+                        Dragger.Position = UDim2.new(xDraggerPos, yDraggerPos)
+                    end
+
+                    Dragger.MouseButton1Down:Connect(function()
+                        updateSlider()
+
+                        local moved
+                        local stopped
+                        moved = InputService.InputChanged:Connect(function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                                updateSlider()
+                            end
+                        end)
+                        stopped = InputService.InputEnded:Connect(function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                                moved:Disconnect()
+                                stopped:Disconnect()
+                            end
+                        end)
                     end)
-                end)
-                return slidercontroller
-            end
+
+                    GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Slider"] = {
+                        ["Type"] = "Slider",
+                        ["Object"] = frame,
+                        ["Controller"] = slidercontroller
+                    }
+                    return slidercontroller
+                end
 
             tabcontroller["CreateDropdown"] = function(args)
                 local dropdownController = {}
-                
 
-                
+                GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Dropdown"] = {
+                    ["Type"] = "Dropdown",
+                    ["Object"] = frame,
+                    ["Controller"] = dropdownController
+                }
                 return dropdownController
             end
+
+            GuiLibrary.Objects[argsmain["Name"] .. "Tab"] = {
+                ["Type"] = "Tab",
+                ["Object"] = frame,
+                ["Controller"] = tabcontroller
+            }
             return tabcontroller
         end
         return windowcontroller
@@ -928,7 +965,7 @@ if shared.FlashExecuted then
     end
 
     GuiLibrary["CreateNotification"] = function(top, bottom, duration, customicon)
-        local size = math.max(textService:GetTextSize(removeTags(bottom), 13, Enum.Font.Gotham,
+        local size = math.max(TextService:GetTextSize(removeTags(bottom), 13, Enum.Font.Gotham,
                                   Vector2.new(99999, 99999)).X + 60, 266)
         local offset = #notificationwindow:GetChildren()
         local frame = Instance.new("Frame")
@@ -969,7 +1006,7 @@ if shared.FlashExecuted then
         frame2.Parent = image
         local icon = Instance.new("ImageLabel")
         icon.Name = "IconLabel"
-        icon.Image = downloadAsset(customicon and baseDirectory .. customicon or "flash/assets/InfoNotification.png")
+        icon.Image = downloadAsset(customicon and BaseDirectory .. customicon or "flash/assets/InfoNotification.png")
         icon.BackgroundTransparency = 1
         icon.Position = UDim2.new(0, -6, 0, -6)
         icon.Size = UDim2.new(0, 60, 0, 60)
@@ -1032,8 +1069,8 @@ if shared.FlashExecuted then
     local holdingctrl = false
     local uninjected = false
 
-    GuiLibrary["KeyInputHandler"] = inputService.InputBegan:Connect(function(input)
-        if inputService:GetFocusedTextBox() == nil then
+    GuiLibrary["KeyInputHandler"] = InputService.InputBegan:Connect(function(input)
+        if InputService:GetFocusedTextBox() == nil then
             if input.KeyCode == Enum.KeyCode[GuiLibrary["GUIKeybind"]] then
                 mainui.Visible = not mainui.Visible
             end
@@ -1041,19 +1078,19 @@ if shared.FlashExecuted then
                 GuiLibrary["SelfDestruct"]()
                 uninjected = true
             end
-            if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then 
-				holdingctrl = true
-			end
+            if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then
+                holdingctrl = true
+            end
         end
     end)
 
-    GuiLibrary["KeyInputHandler2"] = inputService.InputEnded:Connect(function(input)
-		if input.KeyCode == Enum.KeyCode.RightAlt then
-            if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then 
-				holdingctrl = false
+    GuiLibrary["KeyInputHandler2"] = InputService.InputEnded:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.RightAlt then
+            if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then
+                holdingctrl = false
             end
-		end
-	end)
+        end
+    end)
 
     searchbar:GetPropertyChangedSignal("Text"):Connect(function()
         if searchbar.Text == "" then
@@ -1061,7 +1098,7 @@ if shared.FlashExecuted then
         else
             local optionbuttons = {}
             for i, v in pairs(GuiLibrary.Objects) do
-                
+
             end
             searchbarmain.Size = UDim2.new(0, 220, 0, 39 + (40 * #optionbuttons))
         end
