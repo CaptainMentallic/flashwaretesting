@@ -8,23 +8,28 @@ local redownloadedAssets = false
 local ConfigsLoaded = false
 local teleportedServers = false
 local gameCamera = workspace.CurrentCamera
-local textService = game:GetService("TextService")
-local playersService = game:GetService("Players")
 local setidentity = syn and syn.set_thread_identity or set_thread_identity or setidentity or setthreadidentity or function() end
 local getidentity = syn and syn.get_thread_identity or get_thread_identity or getidentity or getthreadidentity or function() return 0 end
 local getcustomasset = getsynasset or getcustomasset or function(location) return "rbxasset://"..location end
 local queueonteleport = syn and syn.queue_on_teleport or queue_on_teleport or function() end
 local cachedfiles = "flash/cachedfiles.txt"
 
+local serv = setmetatable({}, {
+	__index = function(self, name)
+		local pass, service = pcall(game.GetService, game, name)
+		if pass then self[name] = service return service end
+	end
+})
+
 local function displayErrorPopup(text, funclist)
 	print(text)
 	print(funclist)
 	local oldidentity = getidentity()
 	setidentity(8)
-	local ErrorPrompt = getrenv().require(game:GetService("CoreGui").RobloxGui.Modules.ErrorPrompt)
+	local ErrorPrompt = getrenv().require(serv.CoreGui.RobloxGui.Modules.ErrorPrompt)
 	local prompt = ErrorPrompt.new("Default")
 	prompt._hideErrorCode = true
-	local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+	local gui = Instance.new("ScreenGui", serv.CoreGui)
 	prompt:setErrorTitle("flash")
 	local funcs = {}
 	local num = 0
@@ -265,7 +270,7 @@ ConfigsTextList = Configs.CreateTextList({
 						bindtext.Visible = false
 						bindtext.Text = key
 					else
-						local textsize = textService:GetTextSize(key, 16, bindtext.Font, Vector2.new(99999, 99999))
+						local textsize = serv.TextService:GetTextSize(key, 16, bindtext.Font, Vector2.new(99999, 99999))
 						newsize = UDim2.new(0, 13 + textsize.X, 0, 21)
 						GuiLibrary.Configs[ConfigName].Keybind = key
 						bindbkg.Visible = true
@@ -305,7 +310,7 @@ ConfigsTextList = Configs.CreateTextList({
 		end)
 		if GuiLibrary.Configs[ConfigName].Keybind ~= "" then
 			bindtext.Text = GuiLibrary.Configs[ConfigName].Keybind
-			local textsize = textService:GetTextSize(GuiLibrary.Configs[ConfigName].Keybind, 16, bindtext.Font, Vector2.new(99999, 99999))
+			local textsize = serv.TextService:GetTextSize(GuiLibrary.Configs[ConfigName].Keybind, 16, bindtext.Font, Vector2.new(99999, 99999))
 			newsize = UDim2.new(0, 13 + textsize.X, 0, 21)
 			bindbkg.Size = newsize
 			bindbkg.Position = UDim2.new(1, -(30 + newsize.X.Offset), 0, 6)
@@ -467,7 +472,7 @@ local function TextGUIUpdate()
 			table.sort(moduleList, function(a, b) return a.Text:lower() < b.Text:lower() end)
 		else
 			table.sort(moduleList, function(a, b) 
-				return textService:GetTextSize(a.Text..a.ExtraText, flashText.TextSize, flashText.Font, Vector2.new(1000000, 1000000)).X > textService:GetTextSize(b.Text..b.ExtraText, flashText.TextSize, flashText.Font, Vector2.new(1000000, 1000000)).X 
+				return serv.TextService:GetTextSize(a.Text..a.ExtraText, flashText.TextSize, flashText.Font, Vector2.new(1000000, 1000000)).X > serv.TextService:GetTextSize(b.Text..b.ExtraText, flashText.TextSize, flashText.Font, Vector2.new(1000000, 1000000)).X 
 			end)
 		end
 
@@ -486,7 +491,7 @@ local function TextGUIUpdate()
 
 		TextGUIFormatted = moduleList
 		flashTextExtra.Text = formattedText
-        flashText.Size = UDim2.fromOffset(154, (formattedText ~= "" and textService:GetTextSize(formattedText, flashText.TextSize, flashText.Font, Vector2.new(1000000, 1000000)) or Vector2.zero).Y)
+        flashText.Size = UDim2.fromOffset(154, (formattedText ~= "" and serv.TextService:GetTextSize(formattedText, flashText.TextSize, flashText.Font, Vector2.new(1000000, 1000000)) or Vector2.zero).Y)
 
         if TextGUI.GetCustomChildren().Parent then
             if (TextGUI.GetCustomChildren().Parent.Position.X.Offset + TextGUI.GetCustomChildren().Parent.Size.X.Offset / 2) >= (gameCamera.ViewportSize.X / 2) then
@@ -547,7 +552,7 @@ local function TextGUIUpdate()
             if v:IsA("Frame") then v:Destroy() end
         end
         for i,v in pairs(backgroundList) do
-            local textsize = textService:GetTextSize(v, flashText.TextSize, flashText.Font, Vector2.new(1000000, 1000000))
+            local textsize = serv.TextService:GetTextSize(v, flashText.TextSize, flashText.Font, Vector2.new(1000000, 1000000))
             local backgroundFrame = Instance.new("Frame")
             backgroundFrame.BorderSizePixel = 0
             backgroundFrame.BackgroundTransparency = 0.62
@@ -914,7 +919,7 @@ TargetInfoHealthExtra.Parent = TargetInfoHealth
 local TargetInfoImage = Instance.new("ImageLabel")
 TargetInfoImage.Size = UDim2.new(0, 61, 0, 61)
 TargetInfoImage.BackgroundTransparency = 1
-TargetInfoImage.Image = 'rbxthumb://type=AvatarHeadShot&id='..playersService.LocalPlayer.UserId..'&w=420&h=420'
+TargetInfoImage.Image = 'rbxthumb://type=AvatarHeadShot&id='..serv.PlayerService.LocalPlayer.UserId..'&w=420&h=420'
 TargetInfoImage.Position = UDim2.new(0, 5, 0, 10)
 TargetInfoImage.Parent = TargetInfoMainInfo
 local TargetInfoMainInfoCorner = Instance.new("UICorner")
@@ -1006,7 +1011,7 @@ ModuleSettings.CreateToggle({
 							table.insert(chars, v.Character)
 						end
 						rayparams.FilterDescendantsInstances = chars
-						local mouseunit = playersService.LocalPlayer:GetMouse().UnitRay
+						local mouseunit = serv.PlayerService.LocalPlayer:GetMouse().UnitRay
 						local ray = workspace:Raycast(mouseunit.Origin, mouseunit.Direction * 10000, rayparams)
 						if ray then 
 							for i,v in pairs(entityLibrary.entityList) do 
@@ -1264,7 +1269,7 @@ GUISettings.CreateSlider({
 })
 
 local GUIbind = GUI.CreateGUIBind()
-local teleportConnection = playersService.LocalPlayer.OnTeleport:Connect(function(State)
+local teleportConnection = serv.PlayerService.LocalPlayer.OnTeleport:Connect(function(State)
     if (not teleportedServers) then
 		teleportedServers = true
 		local teleportScript = [[

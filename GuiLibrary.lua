@@ -12,16 +12,14 @@ if shared.FlashExecuted then
     GuiLibrary.Settings = {
         CurrentTheme = {
             Type = "Custom",
-            Color = GuiLibrary.Colors.THEMES.RED
+            Color = GuiLibrary.Colors.THEMES.GREEN
         }
     }
-
     GuiLibrary.Configs = {
         Default = {
             ConfigEnabled = true
         }
     }
-
     GuiLibrary.RainbowSpeed = 0.5
     GuiLibrary.GUIKeybind = "RightShift"
     GuiLibrary.CurrentConfig = "Default"
@@ -35,25 +33,28 @@ if shared.FlashExecuted then
         DIVIDER_COLOR = Color3.fromRGB(101, 106, 116),
         LABEL_COLOR = Color3.fromRGB(255, 255, 255),
         DISABLED = Color3.fromRGB(114, 118, 124),
+
         THEMES = {
             RED = Color3.fromRGB(243, 64, 72),
             ORANGE = Color3.fromRGB(248, 152, 82),
             PURPLE = Color3.fromRGB(110, 139, 212),
             BLUE = Color3.fromRGB(37, 85, 198),
             CYAN = Color3.fromRGB(60, 227, 216),
+            GREEN = Color3.fromRGB(0, 180, 126),
             RAINBOW = Color3.fromHSV(RainbowValue, 1, 1)
         }
     }
 
-    local InputService = game:GetService("UserInputService")
-    local HttpService = game:GetService("HttpService")
-    local TweenService = game:GetService("TweenService")
-    local GuiService = game:GetService("GuiService")
-    local TextService = game:GetService("TextService")
+    local serv = setmetatable({}, {
+        __index = function(self, name)
+            local pass, service = pcall(game.GetService, game, name)
+            if pass then self[name] = service return service end
+        end
+    })
 
     task.spawn(function()
         while shared.FlashExecuted do
-            RainbowValue = RainbowValue + 0.01 * GuiLibrary["RainbowSpeed"]
+            RainbowValue = RainbowValue + 0.005 * GuiLibrary["RainbowSpeed"]
             if RainbowValue > 1 then
                 RainbowValue = RainbowValue - 1
             end
@@ -98,7 +99,7 @@ if shared.FlashExecuted then
             end)
             local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s",
                 scripturl)
-            local success, response = pcall(HttpService.RequestAsync, HttpService, {
+            local success, response = pcall(serv.HttpService.RequestAsync, serv.HttpService, {
                 Url = url,
                 Method = "GET",
                 Headers = {
@@ -144,47 +145,32 @@ if shared.FlashExecuted then
         return cachedAssets[path]
     end
 
-    local function dragGUI(gui)
+    local function dragUI(frame)
         task.spawn(function()
-            local dragging
-            local dragInput
-            local dragStart = Vector3.new(0, 0, 0)
-            local startPos
+            local dragInput, dragStart, startPos, currentPos
             local function update(input)
                 local delta = input.Position - dragStart
-                local Position = UDim2.new(startPos.X.Scale,
-                    startPos.X.Offset + (delta.X * (1 / GuiLibrary["MainRescale"].Scale)), startPos.Y.Scale,
-                    startPos.Y.Offset + (delta.Y * (1 / GuiLibrary["MainRescale"].Scale)))
-                TweenService:Create(gui, TweenInfo.new(.20), {
-                    Position = Position
-                }):Play()
+                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
             end
-            gui.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType ==
-                    Enum.UserInputType.Touch and dragging == false then
+            frame.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     dragStart = input.Position
-                    local delta = (dragStart - Vector3.new(gui.AbsolutePosition.X, gui.AbsolutePosition.Y, 0)) *
-                                      (1 / GuiLibrary["MainRescale"].Scale)
-                    if delta.Y <= 40 then
-                        dragging = mainui.Visible
-                        startPos = gui.Position
-
-                        input.Changed:Connect(function()
-                            if input.UserInputState == Enum.UserInputState.End then
-                                dragging = false
-                            end
-                        end)
-                    end
+                    startPos = frame.Position
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            dragInput = nil
+                        end
+                    end)
                 end
             end)
-            gui.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType ==
-                    Enum.UserInputType.Touch then
+            frame.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
                     dragInput = input
                 end
             end)
-            InputService.InputChanged:Connect(function(input)
-                if input == dragInput and dragging then
+            frame.InputEnded:Connect(function(input)
+                if input == dragInput and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+                    currentPos = gui.Position
                     update(input)
                 end
             end)
@@ -198,7 +184,7 @@ if shared.FlashExecuted then
     gui.ResetOnSpawn = false
     gui.OnTopOfCoreBlur = true
 
-    local parent = gethui and gethui() or game:GetService("CoreGui")
+    local parent = gethui and gethui() or serv.CoreGui
     if syn and syn.protect_gui then
         syn.protect_gui(gui)
     end
@@ -264,7 +250,7 @@ if shared.FlashExecuted then
     notificationwindow.Size = UDim2.new(1, 0, 1, 0)
     notificationwindow.Parent = GuiLibrary["MainGui"]
 
-    local vTextSize = TextService:GetTextSize("v" .. Version, 25, Enum.Font.Arial, Vector2.new(999999, 999999))
+    local vTextSize = serv.TextService:GetTextSize("v" .. Version, 25, Enum.Font.Arial, Vector2.new(999999, 999999))
 
     local hudgui = Instance.new("Frame")
     hudgui.Name = "HudGui"
@@ -279,7 +265,7 @@ if shared.FlashExecuted then
     GuiLibrary.SaveSettings = function()
         if LoadedSuccess then
             writefile(BaseDirectory .. "Configs/" .. game.PlaceId .. ".FlashWareConfigs.txt",
-                HttpService:JSONEncode(GuiLibrary.Configs))
+                serv.HttpService:JSONEncode(GuiLibrary.Configs))
             local WindowTable = {}
             for i, v in pairs(GuiLibrary.Objects) do
                 if v.Type == "MainWindow" then
@@ -348,15 +334,15 @@ if shared.FlashExecuted then
                 ["Value"] = GuiLibrary["GUIKeybind"]
             }
             writefile(BaseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." .. game.PlaceId ..
-                          ".FlashConfig.txt", HttpService:JSONEncode(GuiLibrary.Settings))
+                          ".FlashConfig.txt", serv.HttpService:JSONEncode(GuiLibrary.Settings))
             writefile(BaseDirectory .. "Configs/" .. game.GameId .. ".UISettings.FlashConfig.txt",
-                HttpService:JSONEncode(WindowTable))
+                serv.HttpService:JSONEncode(WindowTable))
         end
     end
 
     GuiLibrary.LoadSettings = function(customconfig)
         local success, result = pcall(function()
-            return HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. game.PlaceId ..
+            return serv.HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. game.PlaceId ..
                                                        ".FlashWareConfigs.txt"))
         end)
         if success and type(result) == "table" then
@@ -375,7 +361,7 @@ if shared.FlashExecuted then
             GuiLibrary.CurrentConfig = customconfig
         end
         local success1, result1 = pcall(function()
-            return HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. (game.GameId) ..
+            return serv.HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. (game.GameId) ..
                                                        ".UISettings.FlashConfig.txt"))
         end)
         if success1 and type(result1) == "table" then
@@ -411,7 +397,7 @@ if shared.FlashExecuted then
             end
         end
         local success2, result2 = pcall(function()
-            return HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." ..
+            return serv.HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." ..
                                                        game.PlaceId .. ".FlashConfig.txt"))
         end)
         if success2 and type(result2) == "table" then
@@ -595,7 +581,7 @@ if shared.FlashExecuted then
             end
         until not shared.FlashExecuted
 
-        dragGUI(window)
+        dragUI(window)
 
         GuiLibrary.Objects["GUIWindow"] = {
             ["ControlFrames"] = {},
@@ -851,7 +837,7 @@ if shared.FlashExecuted then
                     slidercontroller["SetValue"](args["DefaultValue"])
 
                     function updateSlider()
-                        local x, y, xscale = CalculateRelativePosition(Bar, InputService:GetMouseLocation())
+                        local x, y, xscale = CalculateRelativePosition(Bar, serv.InputService:GetMouseLocation())
                         local diff = (args["Max"] - args["Min"])
                         local value = math.floor(args["Min"] + (diff * xscale))
 
@@ -872,12 +858,12 @@ if shared.FlashExecuted then
 
                         local moved
                         local stopped
-                        moved = InputService.InputChanged:Connect(function(input)
+                        moved = serv.InputService.InputChanged:Connect(function(input)
                             if input.UserInputType == Enum.UserInputType.MouseMovement then
                                 updateSlider()
                             end
                         end)
-                        stopped = InputService.InputEnded:Connect(function(input)
+                        stopped = serv.InputService.InputEnded:Connect(function(input)
                             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                                 moved:Disconnect()
                                 stopped:Disconnect()
@@ -965,7 +951,7 @@ if shared.FlashExecuted then
     end
 
     GuiLibrary["CreateNotification"] = function(top, bottom, duration, customicon)
-        local size = math.max(TextService:GetTextSize(removeTags(bottom), 13, Enum.Font.Gotham,
+        local size = math.max(serv.TextService:GetTextSize(removeTags(bottom), 13, Enum.Font.Gotham,
                                   Vector2.new(99999, 99999)).X + 60, 266)
         local offset = #notificationwindow:GetChildren()
         local frame = Instance.new("Frame")
@@ -1069,8 +1055,8 @@ if shared.FlashExecuted then
     local holdingctrl = false
     local uninjected = false
 
-    GuiLibrary["KeyInputHandler"] = InputService.InputBegan:Connect(function(input)
-        if InputService:GetFocusedTextBox() == nil then
+    GuiLibrary["KeyInputHandler"] = serv.InputService.InputBegan:Connect(function(input)
+        if serv.InputService:GetFocusedTextBox() == nil then
             if input.KeyCode == Enum.KeyCode[GuiLibrary["GUIKeybind"]] then
                 mainui.Visible = not mainui.Visible
             end
@@ -1084,7 +1070,7 @@ if shared.FlashExecuted then
         end
     end)
 
-    GuiLibrary["KeyInputHandler2"] = InputService.InputEnded:Connect(function(input)
+    GuiLibrary["KeyInputHandler2"] = serv.InputService.InputEnded:Connect(function(input)
         if input.KeyCode == Enum.KeyCode.RightAlt then
             if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then
                 holdingctrl = false
