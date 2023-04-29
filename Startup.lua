@@ -54,7 +54,7 @@ local function getFromGithub(scripturl)
             end
         end)
         local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s", scripturl)
-        local success, response = pcall(http.RequestAsync, http, {
+        local success, response = pcall(serv.http.RequestAsync, serv.http, {
             Url = url,
             Method = "GET",
             Headers = {
