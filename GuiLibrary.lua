@@ -167,6 +167,10 @@ if shared.FlashExecuted then
         end)
     end
 
+    if not shared.CurrentLoad then
+        shared.CurrentLoad = "Universal"
+    end
+
     local gui = Instance.new("ScreenGui")
     gui.Name = randomString()
     gui.DisplayOrder = 999

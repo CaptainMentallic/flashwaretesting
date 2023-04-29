@@ -120,7 +120,6 @@ end
 
 --assert(not shared.FlashExecuted, "FlashWare Is Already Injected")
 shared.FlashExecuted = true
-shared.CurrentLoad = "Universal"
 
 for i, v in pairs({baseDirectory:gsub("/", ""), "flash", "flash/Libraries", "flash/Games", "flash/configs",
                    baseDirectory .. "configs", "flash/assets", "flash/exports"}) do
