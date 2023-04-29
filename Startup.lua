@@ -3,27 +3,40 @@ local setidentity = syn and syn.set_thread_identity or set_thread_identity or se
 local getidentity = syn and syn.get_thread_identity or get_thread_identity or getidentity or getthreadidentity or function() return 8 end
 local cachedfiles = "flash/cachedfiles.txt"
 
-local function displayErrorPopup(text, func)
-    local oldidentity = getidentity()
-    setidentity(8)
-    local ErrorPrompt = getrenv().require(game:GetService("CoreGui").RobloxGui.Modules.ErrorPrompt)
-    local prompt = ErrorPrompt.new("Default")
-    prompt._hideErrorCode = true
-    local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-    prompt:setErrorTitle("FlashWare")
-    prompt:updateButtons({{
-        Text = "OK",
-        Callback = function()
-            prompt:_close()
-            if func then
-                func()
-            end
-        end,
-        Primary = true
-    }}, 'Default')
-    prompt:setParent(gui)
-    prompt:_open(text)
-    setidentity(oldidentity)
+local function displayErrorPopup(text, funclist)
+	local oldidentity = getidentity()
+	setidentity(8)
+	local ErrorPrompt = getrenv().require(serv.CoreGui.RobloxGui.Modules.ErrorPrompt)
+	local prompt = ErrorPrompt.new("Default")
+	prompt._hideErrorCode = true
+	local gui = Instance.new("ScreenGui", serv.CoreGui)
+	prompt:setErrorTitle("FlashWare")
+	local funcs
+	if funclist then 
+		funcs = {}
+		local num = 0
+		for i,v in pairs(funclist) do 
+			num = num + 1
+			table.insert(funcs, {
+				Text = i,
+				Callback = function() 
+					prompt:_close() 
+					v()
+				end,
+				Primary = num == #funclist
+			})
+		end
+	end
+	prompt:updateButtons(funcs or {{
+		Text = "OK",
+		Callback = function() 
+			prompt:_close() 
+		end,
+		Primary = true
+	}}, 'Default')
+	prompt:setParent(gui)
+	prompt:_open(text)
+	setidentity(oldidentity)
 end
 
 local function getFromGithub(scripturl)

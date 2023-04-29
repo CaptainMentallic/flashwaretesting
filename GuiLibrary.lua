@@ -2,7 +2,6 @@ local GuiLibrary = {}
 
 if shared.FlashExecuted then
     local Version = readfile("flash/version.txt")
-    local BaseDirectory = "flash/"
     local RainbowValue = 0
     local getcustomasset = getsynasset or getcustomasset or function(location)
         return "rbxasset://" .. location
@@ -41,7 +40,7 @@ if shared.FlashExecuted then
             BLUE = Color3.fromRGB(37, 85, 198),
             CYAN = Color3.fromRGB(60, 227, 216),
             GREEN = Color3.fromRGB(0, 180, 126),
-            RAINBOW = Color3.fromHSV(RainbowValue, 1, 1)
+            RAINBOW = RainbowValue -- Color3.fromHSV(GuiLibrary.Colors.THEMES.RAINBOW, 1, 1)
         }
     }
 
@@ -87,7 +86,7 @@ if shared.FlashExecuted then
     end
 
     local function getFromGithub(scripturl)
-        local filepath = BaseDirectory .. scripturl
+        local filepath = "flash/" .. scripturl
         if not isfile(filepath) then
             local warningShown = false
             task.spawn(function()
@@ -264,7 +263,7 @@ if shared.FlashExecuted then
 
     GuiLibrary.SaveSettings = function()
         if LoadedSuccess then
-            writefile(BaseDirectory .. "Configs/" .. game.PlaceId .. ".FlashWareConfigs.txt",
+            writefile("flash/Configs/" .. game.PlaceId .. ".FlashWareConfigs.txt",
                 serv.HttpService:JSONEncode(GuiLibrary.Configs))
             local WindowTable = {}
             for i, v in pairs(GuiLibrary.Objects) do
@@ -333,16 +332,16 @@ if shared.FlashExecuted then
                 ["Type"] = "GUIKeybind",
                 ["Value"] = GuiLibrary["GUIKeybind"]
             }
-            writefile(BaseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." .. game.PlaceId ..
+            writefile("flash/Configs/" .. GuiLibrary.CurrentConfig .. "." .. game.PlaceId ..
                           ".FlashConfig.txt", serv.HttpService:JSONEncode(GuiLibrary.Settings))
-            writefile(BaseDirectory .. "Configs/" .. game.GameId .. ".UISettings.FlashConfig.txt",
+            writefile("flash/Configs/" .. game.GameId .. ".UISettings.FlashConfig.txt",
                 serv.HttpService:JSONEncode(WindowTable))
         end
     end
 
     GuiLibrary.LoadSettings = function(customconfig)
         local success, result = pcall(function()
-            return serv.HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. game.PlaceId ..
+            return serv.HttpService:JSONDecode(readfile("flash/Configs/" .. game.PlaceId ..
                                                        ".FlashWareConfigs.txt"))
         end)
         if success and type(result) == "table" then
@@ -361,7 +360,7 @@ if shared.FlashExecuted then
             GuiLibrary.CurrentConfig = customconfig
         end
         local success1, result1 = pcall(function()
-            return serv.HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. (game.GameId) ..
+            return serv.HttpService:JSONDecode(readfile("flash/Configs/" .. (game.GameId) ..
                                                        ".UISettings.FlashConfig.txt"))
         end)
         if success1 and type(result1) == "table" then
@@ -397,7 +396,7 @@ if shared.FlashExecuted then
             end
         end
         local success2, result2 = pcall(function()
-            return serv.HttpService:JSONDecode(readfile(BaseDirectory .. "Configs/" .. GuiLibrary.CurrentConfig .. "." ..
+            return serv.HttpService:JSONDecode(readfile("flash/Configs/" .. GuiLibrary.CurrentConfig .. "." ..
                                                        game.PlaceId .. ".FlashConfig.txt"))
         end)
         if success2 and type(result2) == "table" then
@@ -421,7 +420,7 @@ if shared.FlashExecuted then
     GuiLibrary["SwitchConfig"] = function(configname)
         GuiLibrary.Configs[GuiLibrary.CurrentConfig]["ConfigEnabled"] = false
         GuiLibrary.Configs[configname]["ConfigEnabled"] = true
-        if (not isfile(BaseDirectory .. "Configs/" .. (configname == "Default" and "" or configname) .. game.PlaceId ..
+        if (not isfile("flash/Configs/" .. (configname == "Default" and "" or configname) .. game.PlaceId ..
                            ".FlashConfig.txt")) then
             local config = GuiLibrary.CurrentConfig
             GuiLibrary.CurrentConfig = configname
@@ -992,7 +991,7 @@ if shared.FlashExecuted then
         frame2.Parent = image
         local icon = Instance.new("ImageLabel")
         icon.Name = "IconLabel"
-        icon.Image = downloadAsset(customicon and BaseDirectory .. customicon or "flash/assets/InfoNotification.png")
+        icon.Image = downloadAsset(customicon and "flash/" .. customicon or "flash/assets/InfoNotification.png")
         icon.BackgroundTransparency = 1
         icon.Position = UDim2.new(0, -6, 0, -6)
         icon.Size = UDim2.new(0, 60, 0, 60)
