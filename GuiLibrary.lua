@@ -827,7 +827,7 @@ if shared.FlashExecuted then
                     slidercontroller["SetValue"](args["DefaultValue"])
 
                     function updateSlider()
-                        local x, y, xscale = CalculateRelativePosition(Bar, serv.InputService:GetMouseLocation())
+                        local x, y, xscale = CalculateRelativePosition(Bar, serv.UserInputService:GetMouseLocation())
                         local diff = (args["Max"] - args["Min"])
                         local value = math.floor(args["Min"] + (diff * xscale))
 
@@ -848,12 +848,12 @@ if shared.FlashExecuted then
 
                         local moved
                         local stopped
-                        moved = serv.InputService.InputChanged:Connect(function(input)
+                        moved = serv.UserInputService.InputChanged:Connect(function(input)
                             if input.UserInputType == Enum.UserInputType.MouseMovement then
                                 updateSlider()
                             end
                         end)
-                        stopped = serv.InputService.InputEnded:Connect(function(input)
+                        stopped = serv.UserInputService.InputEnded:Connect(function(input)
                             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                                 moved:Disconnect()
                                 stopped:Disconnect()
@@ -1045,8 +1045,8 @@ if shared.FlashExecuted then
     local holdingctrl = false
     local uninjected = false
 
-    GuiLibrary["KeyInputHandler"] = serv.InputService.InputBegan:Connect(function(input)
-        if serv.InputService:GetFocusedTextBox() == nil then
+    GuiLibrary["KeyInputHandler"] = serv.UserInputService.InputBegan:Connect(function(input)
+        if serv.UserInputService:GetFocusedTextBox() == nil then
             if input.KeyCode == Enum.KeyCode[GuiLibrary["GUIKeybind"]] then
                 mainui.Visible = not mainui.Visible
             end
@@ -1060,7 +1060,7 @@ if shared.FlashExecuted then
         end
     end)
 
-    GuiLibrary["KeyInputHandler2"] = serv.InputService.InputEnded:Connect(function(input)
+    GuiLibrary["KeyInputHandler2"] = serv.UserInputService.InputEnded:Connect(function(input)
         if input.KeyCode == Enum.KeyCode.RightAlt then
             if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then
                 holdingctrl = false
