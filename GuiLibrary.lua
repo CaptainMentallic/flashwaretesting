@@ -8,7 +8,7 @@ if shared.FlashExecuted then
     end
     local LoadedSuccess = false
     local cachedfiles = "flash/cachedfiles.txt"
-    if not isfile(cachedfiles) and not readfile(cachedfiles) then
+    if not isfile(cachedfiles) then
         cachedfiles = game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true)
     end
     
