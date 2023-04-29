@@ -1,7 +1,9 @@
 local errorPopupShown = false
 local setidentity = syn and syn.set_thread_identity or set_thread_identity or setidentity or setthreadidentity or function() end
 local getidentity = syn and syn.get_thread_identity or get_thread_identity or getidentity or getthreadidentity or function() return 8 end
-local cachedfiles = "flash/cachedfiles.txt"
+
+local serv = setmetatable({}, { __index = function(self, name) local pass, service = pcall(game.GetService, game, name) if pass then self[name] = service return service end end})
+local cachedfiles = "flash/cachedfiles.txt" or game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true)
 
 local function displayErrorPopup(text, funclist)
 	local oldidentity = getidentity()

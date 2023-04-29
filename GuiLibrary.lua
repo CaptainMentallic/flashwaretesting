@@ -7,6 +7,7 @@ if shared.FlashExecuted then
         return "rbxasset://" .. location
     end
     local LoadedSuccess = false
+    local cachedfiles = "flash/cachedfiles.txt" or game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true)
 
     GuiLibrary.Settings = {
         CurrentTheme = {
@@ -44,12 +45,7 @@ if shared.FlashExecuted then
         }
     }
 
-    local serv = setmetatable({}, {
-        __index = function(self, name)
-            local pass, service = pcall(game.GetService, game, name)
-            if pass then self[name] = service return service end
-        end
-    })
+    local serv = setmetatable({}, { __index = function(self, name) local pass, service = pcall(game.GetService, game, name) if pass then self[name] = service return service end end})
 
     task.spawn(function()
         while shared.FlashExecuted do
