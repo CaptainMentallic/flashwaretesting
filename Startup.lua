@@ -49,7 +49,7 @@ local function getFromGithub(scripturl)
     local filepath = baseDirectory .. scripturl
 	if not isfile(filepath) then
 		local suc, res
-		task.delay(15, function()
+		task.delay(10, function()
 			if not res and not errorPopupShown then 
 				errorPopupShown = true
 				displayErrorPopup("The connection to GitHub is being slow, or there was an error with the script. \n Please wait a little or check logs")
@@ -57,7 +57,7 @@ local function getFromGithub(scripturl)
 		end)
 		suc, res = pcall(function() return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/"..scripturl, true) end)
 		if not suc or res == "404: Not Found" then
-			displayErrorPopup("Couldn't connect to github : flash/"..scripturl.." : "..res)
+			displayErrorPopup("Couldn't connect to github : "..filepath.." : "..res)
 			error(res)
 		end
 

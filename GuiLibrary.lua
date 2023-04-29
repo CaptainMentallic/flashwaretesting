@@ -34,16 +34,16 @@ if shared.FlashExecuted then
                 RAINBOW = RainbowValue -- Color3.fromHSV(GuiLibrary.Colors.THEMES.RAINBOW, 1, 1)
             }
         },
-        Settings = {
-            CurrentTheme = {
-                Type = "Custom",
-                Color = GuiLibrary.Colors.THEMES.GREEN
-            }
-        },
         Configs = {
             Default = {
                 ConfigEnabled = true
             }
+        }
+    }
+    GuiLibrary.Settings = {
+        CurrentTheme = {
+            Type = "Custom",
+            Color = GuiLibrary.Colors.THEMES.GREEN
         }
     }
     
