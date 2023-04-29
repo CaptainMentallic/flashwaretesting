@@ -46,9 +46,9 @@ local function displayErrorPopup(text, funclist)
 	setidentity(oldidentity)
 end
 
-local function getFromGithub(scripturl)
+local function getFromGithub(scripturl, force)
     local filepath = baseDirectory .. scripturl
-	if not isfile(filepath) then
+	if not isfile(filepath) or force then
 		local suc, res
 		task.delay(10, function()
 			if not res and not errorPopupShown then 
@@ -71,7 +71,7 @@ local function getFromGithub(scripturl)
 	return readfile(filepath)
 end
 
-local newestVersion = getFromGithub("version.txt")
+local newestVersion = getFromGithub("version.txt", true)
 print("GitHub Version: "..newestVersion)
 print("Current Version: "..readfile("flash/version.txt"))
 if isfolder("flash") then
