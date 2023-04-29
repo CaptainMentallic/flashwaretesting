@@ -118,7 +118,7 @@ local function downloadAsset(path)
     return cachedAssets[path]
 end
 
-assert(not shared.FlashExecuted, "FlashWare Is Already Injected")
+--assert(not shared.FlashExecuted, "FlashWare Is Already Injected")
 shared.FlashExecuted = true
 
 for i, v in pairs({baseDirectory:gsub("/", ""), "flash", "flash/Libraries", "flash/Games", "flash/configs",
