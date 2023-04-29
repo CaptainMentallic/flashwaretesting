@@ -6,6 +6,7 @@ local baseDirectory = "flash/"
 local serv = setmetatable({}, { __index = function(self, name) local pass, service = pcall(game.GetService, game, name) if pass then self[name] = service return service end end})
 local cachedfiles = "flash/cachedfiles.txt"
 if not isfile(cachedfiles) then
+	if not isfolder("flash") then makefolder("flash") end
     writefile(cachedfiles, game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true))
 end
 
@@ -52,7 +53,7 @@ local function getFromGithub(scripturl)
 		task.delay(10, function()
 			if not res and not errorPopupShown then 
 				errorPopupShown = true
-				displayErrorPopup("The connection to GitHub is being slow, or there was an error with the script. \n Please wait a little or check logs")
+				displayErrorPopup("The connection to GitHub is being slow, or there was an error with the script.")
 			end
 		end)
 		suc, res = pcall(function() return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/"..scripturl, true) end)
@@ -94,11 +95,8 @@ if isfolder("flash") then
                 end
             end
         end
-		writefile("flash/version.txt", newestVersion)
     end
-else
-    makefolder("flash")
-    writefile("flash/version.txt", newestVersion)
+	writefile("flash/version.txt", newestVersion)
 end
 
 return loadstring(getFromGithub("MainScript.lua"))()
