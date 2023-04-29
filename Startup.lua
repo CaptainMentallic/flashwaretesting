@@ -47,10 +47,10 @@ local function getFromGithub(scripturl)
     if not isfile(filepath) then
         local warningShown = false
         task.spawn(function()
-            local success, _ = pcall(wait, 15)
+            local success, _ = pcall(task.wait, 15)
             if not isfile(filepath) and not warningShown then
                 warningShown = true
-                displayErrorPopup("The connection to GitHub is slow...")
+                displayErrorPopup("The connection to GitHub is slow. \n Please wait a little.")
             end
         end)
         local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s", scripturl)
