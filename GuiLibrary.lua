@@ -9,7 +9,7 @@ if shared.FlashExecuted then
     local LoadedSuccess = false
     local cachedfiles = "flash/cachedfiles.txt"
     if not isfile(cachedfiles) then
-        cachedfiles = game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true)
+        writefile(cachedfiles, game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true))
     end
     
     GuiLibrary.Settings = {
