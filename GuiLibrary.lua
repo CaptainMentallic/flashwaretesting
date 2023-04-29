@@ -1,5 +1,3 @@
-local GuiLibrary = {}
-
 if shared.FlashExecuted then
     local Version = readfile("flash/version.txt")
     local RainbowValue = 0
@@ -12,44 +10,44 @@ if shared.FlashExecuted then
         writefile(cachedfiles, game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true))
     end
     
-    GuiLibrary.Settings = {
-        CurrentTheme = {
-            Type = "Custom",
-            Color = GuiLibrary.Colors.THEMES.GREEN
+    local GuiLibrary = {
+        RainbowSpeed = 0.5,
+        GUIKeybind = "RightShift",
+        CurrentConfig = "Default",
+        ToggleNotifications = false,
+        Notifications = false,
+        Objects = {},
+        Colors = {
+            BACKGROUND_COLOR = Color3.fromRGB(62, 66, 71),
+            ACTIVE_BACKGROUND_COLOR = Color3.fromRGB(76, 79, 87),
+            DIVIDER_COLOR = Color3.fromRGB(101, 106, 116),
+            LABEL_COLOR = Color3.fromRGB(255, 255, 255),
+            DISABLED = Color3.fromRGB(114, 118, 124),
+    
+            THEMES = {
+                RED = Color3.fromRGB(243, 64, 72),
+                ORANGE = Color3.fromRGB(248, 152, 82),
+                PURPLE = Color3.fromRGB(110, 139, 212),
+                BLUE = Color3.fromRGB(37, 85, 198),
+                CYAN = Color3.fromRGB(60, 227, 216),
+                GREEN = Color3.fromRGB(0, 180, 126),
+                RAINBOW = RainbowValue -- Color3.fromHSV(GuiLibrary.Colors.THEMES.RAINBOW, 1, 1)
+            }
+        },
+        Settings = {
+            CurrentTheme = {
+                Type = "Custom",
+                Color = GuiLibrary.Colors.THEMES.GREEN
+            }
+        },
+        Configs = {
+            Default = {
+                ConfigEnabled = true
+            }
         }
     }
-    GuiLibrary.Configs = {
-        Default = {
-            ConfigEnabled = true
-        }
-    }
-    GuiLibrary.RainbowSpeed = 0.5
-    GuiLibrary.GUIKeybind = "RightShift"
-    GuiLibrary.CurrentConfig = "Default"
-    GuiLibrary.ToggleNotifications = false
-    GuiLibrary.Notifications = false
-    GuiLibrary.Objects = {}
-
-    GuiLibrary.Colors = {
-        BACKGROUND_COLOR = Color3.fromRGB(62, 66, 71),
-        ACTIVE_BACKGROUND_COLOR = Color3.fromRGB(76, 79, 87),
-        DIVIDER_COLOR = Color3.fromRGB(101, 106, 116),
-        LABEL_COLOR = Color3.fromRGB(255, 255, 255),
-        DISABLED = Color3.fromRGB(114, 118, 124),
-
-        THEMES = {
-            RED = Color3.fromRGB(243, 64, 72),
-            ORANGE = Color3.fromRGB(248, 152, 82),
-            PURPLE = Color3.fromRGB(110, 139, 212),
-            BLUE = Color3.fromRGB(37, 85, 198),
-            CYAN = Color3.fromRGB(60, 227, 216),
-            GREEN = Color3.fromRGB(0, 180, 126),
-            RAINBOW = RainbowValue -- Color3.fromHSV(GuiLibrary.Colors.THEMES.RAINBOW, 1, 1)
-        }
-    }
-
+    
     local serv = setmetatable({}, { __index = function(self, name) local pass, service = pcall(game.GetService, game, name) if pass then self[name] = service return service end end})
-
     task.spawn(function()
         while shared.FlashExecuted do
             RainbowValue = RainbowValue + 0.005 * GuiLibrary["RainbowSpeed"]

@@ -70,8 +70,9 @@ local function getFromGithub(scripturl)
 	return readfile(filepath)
 end
 
+local newestVersion = getFromGithub("version.txt")
 if isfolder("flash") then
-    if ((not isfile("flash/version.txt")) or readfile("flash/version.txt") < getFromGithub("version.txt")) then
+    if ((not isfile("flash/version.txt")) or readfile("flash/version.txt") < newestVersion) then
         for i, v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua"}) do
             if isfile(v) and readfile(cachedfiles):find(v) then
                 delfile(v)
@@ -91,11 +92,11 @@ if isfolder("flash") then
                 end
             end
         end
-		writefile("flash/version.txt", getFromGithub("version.txt"))
+		writefile("flash/version.txt", newestVersion)
     end
 else
     makefolder("flash")
-    writefile("flash/version.txt", getFromGithub("version.txt"))
+    writefile("flash/version.txt", newestVersion)
 end
 
 return loadstring(getFromGithub("MainScript.lua"))()
