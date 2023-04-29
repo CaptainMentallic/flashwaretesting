@@ -7,8 +7,11 @@ if shared.FlashExecuted then
         return "rbxasset://" .. location
     end
     local LoadedSuccess = false
-    local cachedfiles = "flash/cachedfiles.txt" or game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true)
-
+    local cachedfiles = "flash/cachedfiles.txt"
+    if not isfile(cachedfiles) and not readfile(cachedfiles) then
+        cachedfiles = game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true)
+    end
+    
     GuiLibrary.Settings = {
         CurrentTheme = {
             Type = "Custom",

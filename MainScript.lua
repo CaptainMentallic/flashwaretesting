@@ -22,7 +22,10 @@ local getcustomasset = getsynasset or getcustomasset or function(location)
 end
 local queueonteleport = syn and syn.queue_on_teleport or queue_on_teleport or function()
 end
-local cachedfiles = "flash/cachedfiles.txt" or game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true)
+local cachedfiles = "flash/cachedfiles.txt"
+if not isfile(cachedfiles) and not readfile(cachedfiles) then
+    cachedfiles = game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true)
+end
 
 local serv = setmetatable({}, { __index = function(self, name) local pass, service = pcall(game.GetService, game, name) if pass then self[name] = service return service end end})
 
