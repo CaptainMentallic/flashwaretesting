@@ -84,28 +84,24 @@ if shared.FlashExecuted then
     local function getFromGithub(scripturl)
         local filepath = baseDirectory .. scripturl
         if not isfile(filepath) then
-            local warningShown = false
-            task.spawn(function()
-                local success, _ = pcall(task.wait, 10)
-                if not isfile(filepath) and not warningShown then
-                    warningShown = true
-                    displayErrorPopup("The connection to GitHub is being slow. \n Please wait a little.")
+            local suc, res
+            task.delay(15, function()
+                if not res and not errorPopupShown then 
+                    errorPopupShown = true
+                    displayErrorPopup("The connection to GitHub is being slow, or there was an error with the script. \n Please wait a little or check logs")
                 end
             end)
-            local url = string.format("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/%s", scripturl)
-            local success, response = pcall(serv.HttpService.RequestAsync, serv.HttpService, {
-                Url = url,
-                Method = "GET",
-                Headers = {
-                    ["User-Agent"] = "Roblox/WinInet",
-                },
-            })
-            assert(success and response.Success, "Failed to connect to GitHub: flash/" .. scripturl .. " : " .. response.StatusCode)
-            if scripturl:find("%.lua$") then
-                local cached = readfile(cachedfiles)
-                response.Body = scripturl .. "\n" .. cached .. "\n" .. response.Body
+            suc, res = pcall(function() return game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/"..scripturl, true) end)
+            if not suc or res == "404: Not Found" then
+                displayErrorPopup("Couldn't connect to github : flash/"..scripturl.." : "..res)
+                error(res)
             end
-            writefile(filepath, response.Body)
+    
+            local cached = readfile(cachedfiles)
+            if cached:find(".lua") then cached = scripturl.."\n"..cached end
+            
+            writefile("flash/cachedfiles.txt", cached)
+            writefile(filepath, res)
         end
         return readfile(filepath)
     end  
