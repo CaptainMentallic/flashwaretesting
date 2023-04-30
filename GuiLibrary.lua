@@ -1,6 +1,7 @@
 if shared.FlashExecuted then
     local Version = readfile("flash/version.txt")
     local RainbowValue = 0
+    local baseDirectory = "flash/"
     local getcustomasset = getsynasset or getcustomasset or function(location)
         return "rbxasset://" .. location
     end
@@ -102,7 +103,7 @@ if shared.FlashExecuted then
             end
     
             local cached = readfile(cachedfiles)
-            if cached:find(".lua") then cached = filepath.."\n"..cached end
+            if scripturl:find(".lua") then cached = filepath.."\n"..cached end
             
             writefile("flash/cachedfiles.txt", cached)
             writefile(filepath, res)

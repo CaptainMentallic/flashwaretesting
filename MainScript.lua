@@ -84,7 +84,7 @@ local function getFromGithub(scripturl, force)
 		end
 
         local cached = readfile(cachedfiles)
-		if cached:find(".lua") then cached = filepath.."\n"..cached end
+		if scripturl:find(".lua") then cached = filepath.."\n"..cached end
         
         writefile("flash/cachedfiles.txt", cached)
 		writefile(filepath, res)
@@ -174,13 +174,11 @@ task.spawn(function()
     end)
     task.spawn(function()
         task.wait(15)
-        if image and image.ContentImageSize == Vector2.zero and (not errorPopupShown) and (not redownloadedAssets) and
-            (not betterisfile("flash/assets/check3.txt")) then
+        if image and image.ContentImageSize == Vector2.zero and (not errorPopupShown) and (not redownloadedAssets) and (not betterisfile("flash/assets/check.txt")) then
             errorPopupShown = true
-            displayErrorPopup("Assets failed to load, Try another executor (executor : " ..
-                                  (identifyexecutor and identifyexecutor() or "Unknown") .. ")", {
+            displayErrorPopup("Assets wouldn't load, Try another executor if this keeps happening. \n Current executor : " ..(identifyexecutor and identifyexecutor() or "Unknown") .. ")", {
                 OK = function()
-                    writefile("flash/assets/check3.txt", "")
+                    writefile("flash/assets/check.txt", "Lua is a lightweight, high-level, multi-paradigm programming language designed primarily for embedded use in applications. Lua is cross-platform, since the interpreter of compiled bytecode is written in ANSI C, and Lua has a relatively simple C API to embed it into applications.")
                 end
             })
         end
@@ -192,12 +190,12 @@ local GUI = GuiLibrary.CreateMainWindow()
 local Configs = GuiLibrary.CreateTab({
     Name = "Configs",
     Order = 9,
-    Icon = "assets/ConfigIcon"
+    Icon = "assets/ConfigIcon.png"
 })
 local Settings = GuiLibrary.CreateTab({
     Name = "Settings",
     Order = 10,
-    Icon = "assets/SettingIcon"
+    Icon = "assets/SettingIcon.png"
 })
 
 Settings.CreateToggle({

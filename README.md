@@ -17,8 +17,8 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flas
 # Removed 
 - None
 
-# Broken
+# Known Broken Things
 * Literally everything besides Startup.lua
 
-# To-Do
+# Future
 * Add support for arsenal, bedwars, and some simulators

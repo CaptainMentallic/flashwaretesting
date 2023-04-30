@@ -65,7 +65,7 @@ local function getFromGithub(scripturl, force)
 		end
 
         local cached = readfile(cachedfiles)
-		if cached:find(".lua") then cached = filepath.."\n"..cached end
+		if scripturl:find(".lua") then cached = filepath.."\n"..cached end
         
         writefile("flash/cachedfiles.txt", cached)
 		writefile(filepath, res)
@@ -76,10 +76,10 @@ end
 if betterisfile("flash/version.txt") then print("Old Downloaded Version: ".. readfile("flash/version.txt")) else print("Old Downloaded Version: 0") end
 local newestVersion = getFromGithub("version.txt", true)
 print("GitHub Version: "..newestVersion)
-print("Current Downloaded Version:"..readfile("flash/version.txt"))
+print("Current Downloaded Version: "..readfile("flash/version.txt"))
 if isfolder("flash") then
     if (readfile("flash/version.txt") < newestVersion) then
-        for i, v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua"}) do
+        for i, v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua", "flash/scripts/ChatTags.lua"}) do
             if betterisfile(v) and readfile(cachedfiles):find(v) then
                 delfile(v)
             end
