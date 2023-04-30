@@ -703,7 +703,7 @@ if shared.FlashExecuted then
         end
 
         tabcontroller["CreateToggle"] =
-            function(args) -- Column LabelText DefaultToggle | Returns function with the bool
+            function(args) -- Column Name DefaultToggle | Returns function with the bool
                 local togglecontroller = {}
                 local column = newframe:FindFirstChild("Column" .. args["Column"])
 
@@ -721,7 +721,7 @@ if shared.FlashExecuted then
                 Label.Size = UDim2.new(0.706, 0, 0.818, 0)
                 Label.Position = UDim2.new(0.294, 0, 0.091, 0)
                 Label.Font = Enum.Font.Arial
-                Label.Text = args["LabelText"]
+                Label.Text = args["Name"]
                 Label.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
                 Label.TextSize = 21
                 Label.TextWrapped = true
