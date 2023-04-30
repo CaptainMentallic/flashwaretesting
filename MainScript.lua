@@ -161,6 +161,7 @@ end)
 
 task.spawn(function()
     local image = Instance.new("ImageLabel")
+    image.Name = "IsLoaded"
     image.Image = downloadAsset("flash/assets/CombatIcon.png")
     image.Position = UDim2.new()
     image.BackgroundTransparency = 1
@@ -201,30 +202,32 @@ local Settings = GuiLibrary.CreateTab({
 
 Settings.CreateToggle({
     Name = "Lobby Check",
-    Function = function()
-    end,
-    Default = true,
-    HoverText = "Disables some features in lobby"
+    DefaultToggle = true,
+    Column = "1",
+    Function = function() end
 })
-Settings.CreateDropdown({
-    Name = "GUI Theme"
-})
+-- Settings.CreateDropdown({
+--     Name = "GUI Theme"
+-- })
 Settings.CreateToggle({
     Name = "Blatant mode",
-    Function = function()
+    DefaultToggle = false,
+    Column = "1",
+    Function = function() 
         pcall(function()
             GuiLibrary.CreateNotification("Blatant Enabled", "Flash is now in Blatant Mode.", 5.5, "assets/WarningNotification.png")
         end)
-    end,
-    HoverText = "Required for certain features."
+    end
 })
 
 local IdledConnection
 Settings.CreateToggle({
     Name = "Anti AFK",
+    DefaultToggle = false,
+    Column = "2",
     Function = function(callback)
         if callback then
-            IdledConnection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+            IdledConnection = serv.Players.LocalPlayer.Idled:Connect(function()
                 game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
                 task.wait(1)
                 game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
@@ -240,24 +243,23 @@ Settings.CreateToggle({
 
 Settings.CreateToggle({
     Name = "Blur Background",
+    DefaultToggle = true,
+    Column = "2",
     Function = function(callback)
-        GuiLibrary.MainBlur.Size = (callback and 25 or 0)
-        game:GetService("RunService"):SetRobloxGuiFocused(GuiLibrary.MainGui.ScaledGui.ClickGui.Visible and callback)
-    end,
-    Default = true,
-    HoverText = "Blur the background when in UI"
+        game:GetService("RunService"):SetRobloxGuiFocused(GuiLibrary.MainGui.ScaledGui.MainUI.Visible and callback)
+    end
 })
 local GUIRescaleToggle = Settings.CreateToggle({
     Name = "Rescale",
+    DefaultToggle = true,
+    Column = "3",
     Function = function(callback)
         task.spawn(function()
             GuiLibrary.MainRescale.Scale = (callback and math.clamp(gameCamera.ViewportSize.X / 1920, 0.5, 1) or 0.99)
             task.wait(0.01)
             GuiLibrary.MainRescale.Scale = (callback and math.clamp(gameCamera.ViewportSize.X / 1920, 0.5, 1) or 1)
         end)
-    end,
-    Default = true,
-    HoverText = "Rescales the GUI"
+    end
 })
 gameCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
     if GUIRescaleToggle.Enabled then
@@ -266,23 +268,24 @@ gameCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
 end)
 Settings.CreateToggle({
     Name = "Notifications",
+    DefaultToggle = true,
+    Column = "2",
     Function = function(callback)
         GuiLibrary.Notifications = callback
-    end,
-    Default = true,
-    HoverText = "Shows notifications"
+    end
 })
 Settings.CreateSlider({
     Name = "Rainbow Speed",
-    Function = function(val)
-        GuiLibrary.RainbowSpeed = math.max((val / 10) - 0.4, 0)
-    end,
     Min = 1,
     Max = 100,
-    Default = 10
+    DefaultValue = 10,
+    Column = "3",
+    Function = function(val)
+        GuiLibrary.RainbowSpeed = math.max((val / 10) - 0.4, 0)
+    end
 })
 
-local teleportConnection = serv.PlayerService.LocalPlayer.OnTeleport:Connect(function(State)
+local teleportConnection = serv.Players.LocalPlayer.OnTeleport:Connect(function(State)
     if (not teleportedServers) then
         teleportedServers = true
         local teleportScript = [[

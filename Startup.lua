@@ -73,7 +73,7 @@ local function getFromGithub(scripturl, force)
 	return readfile(filepath)
 end
 
-if betterisfile("flash/version.txt") then print("Old Downloaded Version: ".. readfile("flash/version")) else print("Old Downloaded Version: ".. 0) end
+if betterisfile("flash/version.txt") then print("Old Downloaded Version: ".. readfile("flash/version.txt")) else print("Old Downloaded Version: 0") end
 local newestVersion = getFromGithub("version.txt", true)
 print("GitHub Version: "..newestVersion)
 print("Current Downloaded Version:"..readfile("flash/version.txt"))

@@ -428,9 +428,6 @@ if shared.FlashExecuted then
     end
 
     GuiLibrary["CreateMainWindow"] = function()
-        local windowcontroller = {}
-        local settingsexithovercolor = Color3.fromRGB(20, 20, 20)
-
         local window = Instance.new("Frame")
         window.Name = "MainWindow"
         window.BackgroundColor3 = GuiLibrary.Colors.BACKGROUND_COLOR
@@ -455,16 +452,11 @@ if shared.FlashExecuted then
         LogoLabel.TextScaled = true
         LogoLabel.Parent = window
 
-        local LogoLabelConstraint = Instance.new("UITextSizeConstraint")
-        LogoLabelConstraint.MaxTextSize = 38
-        LogoLabelConstraint.MinTextSize = 1
-        LogoLabelConstraint.Parent = LogoLabel
-
         local GameLabel = Instance.new("TextLabel")
         GameLabel.Name = "GameLabel"
         GameLabel.BackgroundTransparency = 1
         GameLabel.Font = Enum.Font.DenkOne
-        GameLabel.Text = "Universal" --shared.CurrentLoad or ""
+        GameLabel.Text = shared.CurrentLoad or ""
         GameLabel.Size = UDim2.new(0.2, 0, 0.074, 0)
         GameLabel.Position = UDim2.new(1.092, 0, 1.096, 0)
         GameLabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
@@ -509,11 +501,6 @@ if shared.FlashExecuted then
         vText.TextScaled = true
         vText.Parent = window
 
-        local VTextConstraint = Instance.new("UITextSizeConstraint")
-        VTextConstraint.MaxTextSize = 38
-        VTextConstraint.MinTextSize = 1
-        VTextConstraint.Parent = vText
-
         local TabsFrame = Instance.new("ScrollingFrame")
         TabsFrame.Name = "Tabs"
         TabsFrame.Active = true
@@ -544,7 +531,6 @@ if shared.FlashExecuted then
         local DefaultControlsColumn1 = Instance.new("ScrollingFrame")
         DefaultControlsColumn1.Name = "Column1"
         DefaultControlsColumn1.BackgroundTransparency = 1
-        DefaultControlsColumn1.HorizontalAlignment = Enum.HorizontalAlignment.Center
         DefaultControlsColumn1.Position = UDim2.new(0.02, 0, 0.022, 0)
         DefaultControlsColumn1.Size = UDim2.new(0.312, 0, 0.979, 0)
         DefaultControlsColumn1.BorderSizePixel = 0
@@ -555,6 +541,7 @@ if shared.FlashExecuted then
 
         local Defaultcontrolslistlayout = Instance.new("UIListLayout")
         Defaultcontrolslistlayout.Padding = UDim.new(0.01, 0)
+        Defaultcontrolslistlayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
         Defaultcontrolslistlayout.Parent = DefaultControlsColumn1
 
         local DefaultControlsColumn2 = DefaultControlsColumn1:Clone()
@@ -567,332 +554,370 @@ if shared.FlashExecuted then
         DefaultControlsColumn3.Position = UDim2.new(0.67, 0, 0.022, 0)
         DefaultControlsColumn3.Parent = DefaultControlsFrame
 
-        repeat
-            local oldValue = shared.CurrentLoad
-            task.wait(0.8)
-            if oldValue ~= shared.CurrentLoad then
-                GameLabel.Text = shared.CurrentLoad or ""
-                GameLabelShadow.Text = shared.CurrentLoad or ""
-            end
-        until not shared.FlashExecuted
+        task.spawn(function()
+            repeat
+                local oldValue = shared.CurrentLoad
+                task.wait(0.8)
+                if oldValue ~= shared.CurrentLoad then
+                    GameLabel.Text = shared.CurrentLoad or ""
+                    GameLabelShadow.Text = shared.CurrentLoad or ""
+                end
+            until not shared.FlashExecuted
+        end)
 
         dragUI(window)
 
         GuiLibrary.Objects["GUIWindow"] = {
             ["ControlFrames"] = {},
             ["MainWindow"] = window,
-            ["Type"] = "MainWindow",
-            ["Controller"] = windowcontroller
+            ["Type"] = "MainWindow"
+        }
+        return window
+    end
+
+    GuiLibrary["CreateTab"] = function(argsmain) -- Name Order Icon
+        local tabcontroller = {}
+        local window = GuiLibrary.Objects["GUIWindow"]["MainWindow"]
+
+        local frame = Instance.new("Frame")
+        frame.Name = argsmain["Name"]
+        frame.BackgroundColor3 = GuiLibrary.Colors.BACKGROUND_COLOR
+        frame.ZIndex = 2
+        frame.LayoutOrder = argsmain["Order"]
+        frame.Parent = TabsFrame
+
+        local framecorner = Instance.new("UICorner")
+        framecorner.CornerRadius = UDim.new(0.15, 0)
+        framecorner.Parent = frame
+
+        local tabbutton = Instance.new("TextButton")
+        tabbutton.Name = "Click"
+        tabbutton.BackgroundTransparency = 1
+        tabbutton.Size = UDim2.new(1, 0, 1, 0)
+        tabbutton.Text = ""
+        tabbutton.ZIndex = 3
+        tabbutton.Parent = frame
+
+        local tabimage = Instance.new("ImageLabel")
+        tabimage.Name = argsmain["Name"] .. "Icon"
+        tabimage.BackgroundTransparency = 1
+        tabimage.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
+        tabimage.Size = UDim2.new(0.28, 0, 0.525, 0)
+        tabimage.Position = UDim2.new(0.297, 0, 0.297, 0)
+        tabimage.Image = downloadAsset(argsmain["Icon"])
+        tabimage.ZIndex = 2
+        tabimage.Parent = frame
+
+        local tablabel = Instance.new("TextLabel")
+        tablabel.Name = argsmain["Name"] .. "Label"
+        tablabel.BackgroundTransparency = 1
+        tablabel.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
+        tablabel.Size = UDim2.new(0.94, 0, 0.262, 0)
+        tablabel.Position = UDim2.new(-0.03, 0, 0.043, 0)
+        tablabel.Font = Enum.Font.GothamBold
+        tablabel.Text = argsmain["Name"]
+        tablabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
+        tablabel.TextSize = 18
+        tablabel.TextScaled = true
+        tablabel.TextWrapped = true
+        tablabel.ZIndex = 2
+        tablabel.Parent = frame
+
+        local tablabelconstraint = Instance.new("UITextSizeConstraint")
+        tablabelconstraint.MaxTextSize = 18
+        tablabelconstraint.MinTextSize = 1
+        tablabelconstraint.Parent = tablabel
+
+        local DefaultControlsFrame = Instance.new("Frame")
+        DefaultControlsFrame.Name = "DefaultControlsFrame"
+        DefaultControlsFrame.BackgroundColor3 = GuiLibrary.Colors.ACTIVE_BACKGROUND_COLOR
+        DefaultControlsFrame.Size = UDim2.new(0.754, 0, 0.909, 0)
+        DefaultControlsFrame.Position = UDim2.new(0.215, 0, 0.045, 0)
+
+        local DefaultControlsFrameCorner = Instance.new("UICorner")
+        DefaultControlsFrameCorner.CornerRadius = UDim.new(0.025, 0)
+        DefaultControlsFrameCorner.Parent = DefaultControlsFrame
+
+        local DefaultControlsColumn1 = Instance.new("ScrollingFrame")
+        DefaultControlsColumn1.Name = "Column1"
+        DefaultControlsColumn1.BackgroundTransparency = 1
+        DefaultControlsColumn1.Position = UDim2.new(0.02, 0, 0.022, 0)
+        DefaultControlsColumn1.Size = UDim2.new(0.312, 0, 0.979, 0)
+        DefaultControlsColumn1.BorderSizePixel = 0
+        DefaultControlsColumn1.ClipsDescendants = true
+        DefaultControlsColumn1.CanvasSize = UDim2.new(0, 0, 1.3, 0)
+        DefaultControlsColumn1.ScrollBarThickness = 0
+        DefaultControlsColumn1.Parent = DefaultControlsFrame
+
+        local Defaultcontrolslistlayout = Instance.new("UIListLayout")
+        Defaultcontrolslistlayout.Padding = UDim.new(0.01, 0)
+        Defaultcontrolslistlayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        Defaultcontrolslistlayout.Parent = DefaultControlsColumn1
+
+        local DefaultControlsColumn2 = DefaultControlsColumn1:Clone()
+        DefaultControlsColumn2.Name = "Column2"
+        DefaultControlsColumn2.Position = UDim2.new(0.343, 0, 0.022, 0)
+        DefaultControlsColumn2.Parent = DefaultControlsFrame
+
+        local DefaultControlsColumn3 = DefaultControlsColumn1:Clone()
+        DefaultControlsColumn3.Name = "Column3"
+        DefaultControlsColumn3.Position = UDim2.new(0.67, 0, 0.022, 0)
+        DefaultControlsColumn3.Parent = DefaultControlsFrame
+
+        local newframe = DefaultControlsFrame:Clone()
+        newframe.Name = argsmain["Name"] .. "ControlsFrame"
+        newframe.Parent = window
+
+        GuiLibrary.Objects[argsmain["Name"] .. "ControlFrame"] = {
+            ["Type"] = "ControlFrame",
+            ["Object"] = frame
         }
 
-        windowcontroller["CreateTab"] = function(argsmain) -- Name Order Icon
-            local tabcontroller = {}
+        tabbutton.MouseButton1Click:Connect(function()
+            for _, frame in pairs(GuiLibrary.Objects["GUIWindow"]["ControlFrames"]) do
+                frame.Visible = false
+                frame.BackgroundColor3 = GuiLibrary.Colors.BACKGROUND_COLOR
+            end
+            newframe.Visible = not newframe.Visible
+            if newframe.Visible then
+                newframe.BackgroundColor3 = GuiLibrary.Colors.ACTIVE_BACKGROUND_COLOR
+            end
+        end)
 
-            local frame = Instance.new("Frame")
-            frame.Name = argsmain["Name"]
-            frame.BackgroundColor3 = GuiLibrary.Colors.BACKGROUND_COLOR
-            frame.ZIndex = 2
-            frame.LayoutOrder = argsmain["Order"]
-            frame.Parent = TabsFrame
+        tabcontroller["CreateDivider"] = function(args) -- Column
+            local column = newframe:FindFirstChild("Column" .. args["Column"])
+            local amount = #column:GetChildren()
 
-            local framecorner = Instance.new("UICorner")
-            framecorner.CornerRadius = UDim.new(0.15, 0)
-            framecorner.Parent = frame
+            local divider = Instance.new("Frame")
+            divider.Name = "Divider" .. amount
+            divider.Size = UDim2.new(0, 181, 0, 2)
+            divider.LayoutOrder = amount
+            divider.BackgroundColor3 = GuiLibrary.Colors.DIVIDER_COLOR
+            divider.BorderSizePixel = 0
+            divider.Parent = column
 
-            local tabbutton = Instance.new("TextButton")
-            tabbutton.Name = "Click"
-            tabbutton.BackgroundTransparency = 1
-            tabbutton.Size = UDim2.new(1, 0, 1, 0)
-            tabbutton.Text = ""
-            tabbutton.ZIndex = 3
-            tabbutton.Parent = frame
-
-            local tabimage = Instance.new("ImageLabel")
-            tabimage.Name = argsmain["Name"] .. "Icon"
-            tabimage.BackgroundTransparency = 1
-            tabimage.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
-            tabimage.Size = UDim2.new(0.28, 0, 0.525, 0)
-            tabimage.Position = UDim2.new(0.297, 0, 0.297, 0)
-            tabimage.Image = downloadAsset(argsmain["Icon"])
-            tabimage.ZIndex = 2
-            tabimage.Parent = frame
-
-            local tablabel = Instance.new("TextLabel")
-            tablabel.Name = argsmain["Name"] .. "Label"
-            tablabel.BackgroundTransparency = 1
-            tablabel.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
-            tablabel.Size = UDim2.new(0.94, 0, 0.262, 0)
-            tablabel.Position = UDim2.new(-0.03, 0, 0.043, 0)
-            tablabel.Font = Enum.Font.GothamBold
-            tablabel.Text = argsmain["Name"]
-            tablabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
-            tablabel.TextSize = 18
-            tablabel.TextScaled = true
-            tablabel.TextWrapped = true
-            tablabel.ZIndex = 2
-            tablabel.Parent = frame
-
-            local tablabelconstraint = Instance.new("UITextSizeConstraint")
-            tablabelconstraint.MaxTextSize = 18
-            tablabelconstraint.MinTextSize = 1
-            tablabelconstraint.Parent = tablabel
-
-            local newframe = DefaultControlsFrame:Clone()
-            newframe.Name = argsmain["Name"] .. "ControlsFrame"
-            newframe.Parent = window
-
-            GuiLibrary.Objects[argsmain["Name"] .. "ControlFrame"] = {
-                ["Type"] = "ControlFrame",
+            GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Divider"] = {
+                ["Type"] = "Divider",
                 ["Object"] = frame
             }
-
-            tabbutton.MouseButton1Click:Connect(function()
-                for _, frame in pairs(GuiLibrary.Objects["GUIWindow"]["ControlFrames"]) do
-                    frame.Visible = false
-                    frame.BackgroundColor3 = GuiLibrary.Colors.BACKGROUND_COLOR
-                end
-                newframe.Visible = not newframe.Visible
-                if newframe.Visible then
-                    newframe.BackgroundColor3 = GuiLibrary.Colors.ACTIVE_BACKGROUND_COLOR
-                end
-            end)
-
-            tabcontroller["CreateDivider"] = function(args) -- Column
-                local column = newframe:FindFirstChild("Column" .. args["Column"])
-                local amount = #column:GetChildren()
-
-                local divider = Instance.new("Frame")
-                divider.Name = "Divider" .. amount
-                divider.Size = UDim2.new(0, 181, 0, 2)
-                divider.LayoutOrder = amount
-                divider.BackgroundColor3 = GuiLibrary.Colors.DIVIDER_COLOR
-                divider.BorderSizePixel = 0
-                divider.Parent = column
-
-                GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Divider"] = {
-                    ["Type"] = "Divider",
-                    ["Object"] = frame
-                }
-            end
-
-            tabcontroller["CreateToggle"] =
-                function(args) -- Column LabelText DefaultToggle | Returns function with the bool
-                    local togglecontroller = {}
-                    local column = newframe:FindFirstChild("Column" .. args["Column"])
-
-                    local ToggleFrame = Instance.new("Frame")
-                    ToggleFrame.Name = "ToggleFrame"
-                    ToggleFrame.Size = UDim2.new(0, 163, 0, 29)
-                    ToggleFrame.BackgroundTransparency = 1
-                    ToggleFrame.BorderSizePixel = 0
-                    ToggleFrame.Parent = column
-
-                    local Label = Instance.new("TextLabel")
-                    Label.Name = "Label"
-                    Label.Parent = ToggleButton
-                    Label.BackgroundTransparency = 1
-                    Label.Size = UDim2.new(0.706, 0, 0.818, 0)
-                    Label.Position = UDim2.new(0.294, 0, 0.091, 0)
-                    Label.Font = Enum.Font.Arial
-                    Label.Text = args["LabelText"]
-                    Label.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
-                    Label.TextSize = 21
-                    Label.TextWrapped = true
-                    Label.TextXAlignment = Enum.TextXAlignment.Left
-
-                    local ToggleButton = Instance.new("TextButton")
-                    ToggleButton.Name = "ToggleButton"
-                    ToggleButton.Parent = ToggleFrame
-                    ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
-                    ToggleButton.BorderSizePixel = 0
-                    ToggleButton.Text = ""
-                    ToggleButton.AutoButtonColor = false
-                    ToggleButton.Size = UDim2.new(0.221, 0, 0.758, 0)
-                    ToggleButton.Position = UDim2.new(0.011, 0, 0.121, 0)
-
-                    local ToggleButtonCorner = Instance.new("UICorner")
-                    ToggleButtonCorner.CornerRadius = UDim.new(0.5, 0)
-                    ToggleButtonCorner.Parent = ToggleButton
-
-                    local CircleFrame = Instance.new("Frame")
-                    CircleFrame.Parent = ToggleButton
-                    CircleFrame.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
-                    CircleFrame.BorderSizePixel = 0
-                    CircleFrame.Size = UDim2.new(0.5, 0, 0.82, 0)
-                    CircleFrame.Position = UDim2.new(0.45, 0, 0.09, 0)
-
-                    local CircleFrameCorner = Instance.new("UICorner")
-                    CircleFrameCorner.CornerRadius = UDim.new(1, 0)
-                    CircleFrameCorner.Parent = CircleFrame
-
-                    togglecontroller["Toggle"] = function(toggle)
-                        togglecontroller["Enabled"] = toggle
-
-                        if togglecontroller["Enabled"] then
-                            CircleFrame:TweenPosition(UDim2.new(0.45, 0, 0.1, 0), Enum.EasingDirection.InOut,
-                                Enum.EasingStyle.Linear, 0.1, true)
-                            ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
-                        else
-                            ToggleButton.BackgroundColor3 = GuiLibrary.Colors.DISABLED
-                            CircleFrame:TweenPosition(UDim2.new(0.05, 0, 0.1, 0), Enum.EasingDirection.InOut,
-                                Enum.EasingStyle.Linear, 0.1, true)
-                        end
-
-                        args["Function"](togglecontroller["Enabled"])
-                    end
-
-                    togglecontroller["Toggle"](args["DefaultToggle"])
-
-                    ToggleFrame.MouseButton1Click:Connect(function()
-                        togglecontroller["Toggle"](not togglecontroller["Enabled"])
-                    end)
-
-                    GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Toggle"] = {
-                        ["Type"] = "ToggleButton",
-                        ["Object"] = frame,
-                        ["Controller"] = togglecontroller
-                    }
-                    return togglecontroller
-                end
-
-            tabcontroller["CreateSlider"] =
-                function(args) -- DefaultValue Min Max | Returns function with the current slider value
-                    local slidercontroller = {}
-                    local column = newframe:FindFirstChild("Column" .. args["Column"])
-
-                    local SliderFrame = Instance.new("Frame")
-                    SliderFrame.Name = "SliderFrame"
-                    SliderFrame.BackgroundTransparency = 1
-                    SliderFrame.BorderSizePixel = 0
-                    SliderFrame.LayoutOrder = 3
-                    SliderFrame.Size = UDim2.new(0, 153, 0, 33)
-                    SliderFrame.ZIndex = 0
-                    SliderFrame.Parent = column
-
-                    local Bar = Instance.new("Frame")
-                    Bar.Name = "Bar"
-                    Bar.BackgroundColor3 = Color3.fromRGB(64, 67, 72)
-                    Bar.Size = UDim2.new(1, 0, 0.259, 0)
-                    Bar.Position = UDim2.new(0, 0, 0.479, 0)
-                    Bar.Parent = SliderFrame
-
-                    local BarCorner = Instance.new("UICorner")
-                    BarCorner.CornerRadius = UDim.new(1, 0)
-                    BarCorner.Parent = Bar
-
-                    local Dragger = Instance.new("TextButton")
-                    Dragger.Name = "Dragger"
-                    Dragger.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
-                    Dragger.BorderSizePixel = 0
-                    Dragger.Size = UDim2.new(0.05, 0, 2, 0)
-                    Dragger.Position = UDim2.new(0.45, 0, -0.585, 0)
-                    Dragger.ZIndex = 2
-                    Dragger.AutoButtonColor = false
-                    Dragger.Text = ""
-                    Dragger.Parent = Bar
-
-                    local DraggerCorner = Instance.new("UICorner")
-                    DraggerCorner.CornerRadius = UDim.new(1, 0)
-                    DraggerCorner.Parent = Dragger
-
-                    local ValueLabel = Instance.new("TextLabel")
-                    ValueLabel.Name = "Value"
-                    ValueLabel.BackgroundTransparency = 1
-                    ValueLabel.Size = UDim2.new(1.377, 0, 0.243, 0)
-                    ValueLabel.Position = UDim2.new(-0.2, 0, -0.5, 0)
-                    ValueLabel.Font = Enum.Font.ArialBold
-                    ValueLabel.Text = "0"
-                    ValueLabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
-                    ValueLabel.TextSize = 10
-                    ValueLabel.Parent = Dragger
-
-                    local BarClipping = Instance.new("Frame")
-                    BarClipping.Name = "BarClipping"
-                    BarClipping.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
-                    BarClipping.Size = UDim2.new(0.5, 0, 1, 0)
-                    BarClipping.Position = UDim2.new(0, 0, 0, 0)
-                    BarClipping.Parent = Bar
-
-                    local ClippingCorner = Instance.new("UICorner")
-                    ClippingCorner.CornerRadius = UDim.new(1, 0)
-                    ClippingCorner.Parent = BarClipping
-
-                    slidercontroller["SetValue"] = function(value)
-                        slidercontroller["Value"] = value
-                        local valRange = args["Max"] - args["Min"]
-                        local normalizedValue = (value - args["Min"]) / valRange
-                        local clampedValue = math.clamp(normalizedValue, 0.02, 0.97)
-                        BarClipping.Size = UDim2.new(clampedValue, 0, 1, 0)
-
-                        ValueLabel.Text = slidercontroller["Value"] .. ".0 "
-
-                        args["Function"](value)
-                    end
-
-                    slidercontroller["SetValue"](args["DefaultValue"])
-
-                    function updateSlider()
-                        local x, y, xscale = CalculateRelativePosition(Bar, serv.UserInputService:GetMouseLocation())
-                        local diff = (args["Max"] - args["Min"])
-                        local value = math.floor(args["Min"] + (diff * xscale))
-
-                        slidercontroller["SetValue"](value)
-                        ValueLabel.Text = tostring(slidercontroller["Value"])
-
-                        local xscale2 = math.clamp(xscale, 0.02, 1)
-                        BarClipping.Size = UDim2.new(xscale2, 0, 1, 0)
-
-                        local yDraggerPos = UDim.new(-0.585, 0)
-                        local xDraggerPos = UDim.new((xscale2 - 0.05), 0)
-
-                        Dragger.Position = UDim2.new(xDraggerPos, yDraggerPos)
-                    end
-
-                    Dragger.MouseButton1Down:Connect(function()
-                        updateSlider()
-
-                        local moved
-                        local stopped
-                        moved = serv.UserInputService.InputChanged:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseMovement then
-                                updateSlider()
-                            end
-                        end)
-                        stopped = serv.UserInputService.InputEnded:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                                moved:Disconnect()
-                                stopped:Disconnect()
-                            end
-                        end)
-                    end)
-
-                    GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Slider"] = {
-                        ["Type"] = "Slider",
-                        ["Object"] = frame,
-                        ["Controller"] = slidercontroller
-                    }
-                    return slidercontroller
-                end
-
-            tabcontroller["CreateDropdown"] = function(args)
-                local dropdownController = {}
-
-                GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Dropdown"] = {
-                    ["Type"] = "Dropdown",
-                    ["Object"] = frame,
-                    ["Controller"] = dropdownController
-                }
-                return dropdownController
-            end
-
-            GuiLibrary.Objects[argsmain["Name"] .. "Tab"] = {
-                ["Type"] = "Tab",
-                ["Object"] = frame,
-                ["Controller"] = tabcontroller
-            }
-            return tabcontroller
         end
-        return windowcontroller
+
+        tabcontroller["CreateToggle"] =
+            function(args) -- Column LabelText DefaultToggle | Returns function with the bool
+                local togglecontroller = {}
+                local column = newframe:FindFirstChild("Column" .. args["Column"])
+
+                local ToggleFrame = Instance.new("TextButton")
+                ToggleFrame.Name = "ToggleFrame"
+                ToggleFrame.Size = UDim2.new(0, 163, 0, 29)
+                ToggleFrame.BackgroundTransparency = 1
+                ToggleFrame.BorderSizePixel = 0
+                ToggleFrame.Parent = column
+
+                local Label = Instance.new("TextLabel")
+                Label.Name = "Label"
+                Label.Parent = ToggleButton
+                Label.BackgroundTransparency = 1
+                Label.Size = UDim2.new(0.706, 0, 0.818, 0)
+                Label.Position = UDim2.new(0.294, 0, 0.091, 0)
+                Label.Font = Enum.Font.Arial
+                Label.Text = args["LabelText"]
+                Label.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
+                Label.TextSize = 21
+                Label.TextWrapped = true
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+
+                local ToggleButton = Instance.new("TextButton")
+                ToggleButton.Name = "ToggleButton"
+                ToggleButton.Parent = ToggleFrame
+                ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
+                ToggleButton.BorderSizePixel = 0
+                ToggleButton.Text = ""
+                ToggleButton.AutoButtonColor = false
+                ToggleButton.Size = UDim2.new(0.221, 0, 0.758, 0)
+                ToggleButton.Position = UDim2.new(0.011, 0, 0.121, 0)
+
+                local ToggleButtonCorner = Instance.new("UICorner")
+                ToggleButtonCorner.CornerRadius = UDim.new(0.5, 0)
+                ToggleButtonCorner.Parent = ToggleButton
+
+                local CircleFrame = Instance.new("Frame")
+                CircleFrame.Parent = ToggleButton
+                CircleFrame.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
+                CircleFrame.BorderSizePixel = 0
+                CircleFrame.Size = UDim2.new(0.5, 0, 0.82, 0)
+                CircleFrame.Position = UDim2.new(0.45, 0, 0.09, 0)
+
+                local CircleFrameCorner = Instance.new("UICorner")
+                CircleFrameCorner.CornerRadius = UDim.new(1, 0)
+                CircleFrameCorner.Parent = CircleFrame
+
+                togglecontroller["Toggle"] = function(toggle)
+                    togglecontroller["Enabled"] = toggle
+
+                    if togglecontroller["Enabled"] then
+                        CircleFrame:TweenPosition(UDim2.new(0.45, 0, 0.1, 0), Enum.EasingDirection.InOut,
+                            Enum.EasingStyle.Linear, 0.1, true)
+                        ToggleButton.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
+                    else
+                        ToggleButton.BackgroundColor3 = GuiLibrary.Colors.DISABLED
+                        CircleFrame:TweenPosition(UDim2.new(0.05, 0, 0.1, 0), Enum.EasingDirection.InOut,
+                            Enum.EasingStyle.Linear, 0.1, true)
+                    end
+
+                    args["Function"](togglecontroller["Enabled"])
+                end
+
+                togglecontroller["Toggle"](args["DefaultToggle"])
+
+                ToggleFrame.MouseButton1Click:Connect(function()
+                    togglecontroller["Toggle"](not togglecontroller["Enabled"])
+                end)
+
+                GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Toggle"] = {
+                    ["Type"] = "ToggleButton",
+                    ["Object"] = frame,
+                    ["Controller"] = togglecontroller
+                }
+                return togglecontroller
+            end
+
+        tabcontroller["CreateSlider"] =
+            function(args) -- DefaultValue Min Max | Returns function with the current slider value
+                local slidercontroller = {}
+                local column = newframe:FindFirstChild("Column" .. args["Column"])
+
+                local SliderFrame = Instance.new("Frame")
+                SliderFrame.Name = "SliderFrame"
+                SliderFrame.BackgroundTransparency = 1
+                SliderFrame.BorderSizePixel = 0
+                SliderFrame.LayoutOrder = 3
+                SliderFrame.Size = UDim2.new(0, 153, 0, 33)
+                SliderFrame.ZIndex = 0
+                SliderFrame.Parent = column
+
+                local Bar = Instance.new("Frame")
+                Bar.Name = "Bar"
+                Bar.BackgroundColor3 = Color3.fromRGB(64, 67, 72)
+                Bar.Size = UDim2.new(1, 0, 0.259, 0)
+                Bar.Position = UDim2.new(0, 0, 0.479, 0)
+                Bar.Parent = SliderFrame
+
+                local BarCorner = Instance.new("UICorner")
+                BarCorner.CornerRadius = UDim.new(1, 0)
+                BarCorner.Parent = Bar
+
+                local Dragger = Instance.new("TextButton")
+                Dragger.Name = "Dragger"
+                Dragger.BackgroundColor3 = GuiLibrary.Colors.LABEL_COLOR
+                Dragger.BorderSizePixel = 0
+                Dragger.Size = UDim2.new(0.05, 0, 2, 0)
+                Dragger.Position = UDim2.new(0.45, 0, -0.585, 0)
+                Dragger.ZIndex = 2
+                Dragger.AutoButtonColor = false
+                Dragger.Text = ""
+                Dragger.Parent = Bar
+
+                local DraggerCorner = Instance.new("UICorner")
+                DraggerCorner.CornerRadius = UDim.new(1, 0)
+                DraggerCorner.Parent = Dragger
+
+                local ValueLabel = Instance.new("TextLabel")
+                ValueLabel.Name = "Value"
+                ValueLabel.BackgroundTransparency = 1
+                ValueLabel.Size = UDim2.new(1.377, 0, 0.243, 0)
+                ValueLabel.Position = UDim2.new(-0.2, 0, -0.5, 0)
+                ValueLabel.Font = Enum.Font.ArialBold
+                ValueLabel.Text = "0"
+                ValueLabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
+                ValueLabel.TextSize = 10
+                ValueLabel.Parent = Dragger
+
+                local BarClipping = Instance.new("Frame")
+                BarClipping.Name = "BarClipping"
+                BarClipping.BackgroundColor3 = GuiLibrary.Settings.CurrentTheme.Color
+                BarClipping.Size = UDim2.new(0.5, 0, 1, 0)
+                BarClipping.Position = UDim2.new(0, 0, 0, 0)
+                BarClipping.Parent = Bar
+
+                local ClippingCorner = Instance.new("UICorner")
+                ClippingCorner.CornerRadius = UDim.new(1, 0)
+                ClippingCorner.Parent = BarClipping
+
+                slidercontroller["SetValue"] = function(value)
+                    slidercontroller["Value"] = value
+                    local valRange = args["Max"] - args["Min"]
+                    local normalizedValue = (value - args["Min"]) / valRange
+                    local clampedValue = math.clamp(normalizedValue, 0.02, 0.97)
+                    BarClipping.Size = UDim2.new(clampedValue, 0, 1, 0)
+
+                    ValueLabel.Text = slidercontroller["Value"] .. ".0 "
+
+                    args["Function"](value)
+                end
+
+                slidercontroller["SetValue"](args["DefaultValue"])
+
+                function updateSlider()
+                    local x, y, xscale = CalculateRelativePosition(Bar, serv.UserInputService:GetMouseLocation())
+                    local diff = (args["Max"] - args["Min"])
+                    local value = math.floor(args["Min"] + (diff * xscale))
+
+                    slidercontroller["SetValue"](value)
+                    ValueLabel.Text = tostring(slidercontroller["Value"])
+
+                    local xscale2 = math.clamp(xscale, 0.02, 1)
+                    BarClipping.Size = UDim2.new(xscale2, 0, 1, 0)
+
+                    local yDraggerPos = UDim.new(-0.585, 0)
+                    local xDraggerPos = UDim.new((xscale2 - 0.05), 0)
+
+                    Dragger.Position = UDim2.new(xDraggerPos, yDraggerPos)
+                end
+
+                Dragger.MouseButton1Down:Connect(function()
+                    updateSlider()
+
+                    local moved
+                    local stopped
+                    moved = serv.UserInputService.InputChanged:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseMovement then
+                            updateSlider()
+                        end
+                    end)
+                    stopped = serv.UserInputService.InputEnded:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            moved:Disconnect()
+                            stopped:Disconnect()
+                        end
+                    end)
+                end)
+
+                GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Slider"] = {
+                    ["Type"] = "Slider",
+                    ["Object"] = frame,
+                    ["Controller"] = slidercontroller
+                }
+                return slidercontroller
+            end
+
+        tabcontroller["CreateDropdown"] = function(args)
+            local dropdownController = {}
+
+            GuiLibrary.Objects[argsmain["Name"] .. args["Name"] .. "Dropdown"] = {
+                ["Type"] = "Dropdown",
+                ["Object"] = frame,
+                ["Controller"] = dropdownController
+            }
+            return dropdownController
+        end
+
+        GuiLibrary.Objects[argsmain["Name"] .. "Tab"] = {
+            ["Type"] = "Tab",
+            ["Object"] = frame,
+            ["Controller"] = tabcontroller
+        }
+        return tabcontroller
     end
 
     local function bettertween(obj, newpos, dir, style, tim, override)
