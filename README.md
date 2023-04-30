@@ -1,6 +1,6 @@
 # FlashWare
 
-Made this for fun
+Made this for fun and to learn more about lua
 
 # LoadString
 ```lua
