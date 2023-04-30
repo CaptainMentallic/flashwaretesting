@@ -289,7 +289,7 @@ local teleportConnection = serv.Players.LocalPlayer.OnTeleport:Connect(function(
     if (not teleportedServers) then
         teleportedServers = true
         local teleportScript = [[
-			shared.flashSwitchServers = true  
+			shared.FlashSwitchServers = true  
 			loadstring(game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/Startup.lua", true))()
 		]]
         if shared.FlashCustomConfig then
@@ -318,7 +318,7 @@ GuiLibrary.SelfDestruct = function()
 
     GuiLibrary.SelfDestructEvent:Fire()
     shared.FlashExecuted = nil
-    shared.flashSwitchServers = nil
+    shared.FlashSwitchServers = nil
     shared.GuiLibrary = nil
     GuiLibrary.KeyInputHandler:Disconnect()
     teleportConnection:Disconnect()
@@ -326,8 +326,10 @@ GuiLibrary.SelfDestruct = function()
     game:GetService("RunService"):SetRobloxGuiFocused(false)
 end
 
-GeneralSettings.CreateButton2({
+Settings.CreateToggle({
     Name = "Reset Current Config",
+    DefaultToggle = true,
+    Column = "3",
     Function = function()
         GuiLibrary.SelfDestruct()
         if delfile then
@@ -335,13 +337,15 @@ GeneralSettings.CreateButton2({
         else
             writefile(baseDirectory .. "Configs/" .. (GuiLibrary.CurrentConfig ~= "default" and GuiLibrary.CurrentConfig or "") .. game.PlaceId .. ".FlashConfig.txt", "")
         end
-        shared.flashSwitchServers = true
+        shared.FlashSwitchServers = true
         shared.FlashOpenGui = true
         loadstring(getFromGithub("Startup.lua"))()
     end
 })
-GUISettings.CreateButton2({
+Settings.CreateToggle({
     Name = "Reset UI Position",
+    DefaultToggle = true,
+    Column = "3",
     Function = function()
         for i, v in pairs(GuiLibrary.Objects) do
             if (v.Type == "MainWindow") then
@@ -350,8 +354,10 @@ GUISettings.CreateButton2({
         end
     end
 })
-GeneralSettings.CreateButton2({
+Settings.CreateToggle({
     Name = "Uninject",
+    DefaultToggle = true,
+    Column = "3",
     Function = GuiLibrary.SelfDestruct
 })
 
@@ -376,10 +382,10 @@ table.sort(Configs, function(a, b)
     return b == "default" and true or a:lower() < b:lower()
 end)
 
-if not shared.flashSwitchServers then
+if not shared.FlashSwitchServers then
     GuiLibrary.LoadedAnimation(true)
 else
-    shared.flashSwitchServers = nil
+    shared.FlashSwitchServers = nil
 end
 if shared.FlashOpenGui then
     GuiLibrary.MainGui.ScaledGui.ClickGui.Visible = true
