@@ -1,7 +1,24 @@
-# FlashWare Roblox
+# FlashWare
 
-Project I made since I was bored 
+Made this for fun
 
-Idea inspired by 7GrandDad
+# LoadString
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/Startup.lua", true))()
+```
 
-UI inspired from Juul Minecraft Client
+# Features
+* Configs
+* Anti AFK
+
+# Working
+* Nothing
+
+# Removed 
+- None
+
+# Broken
+* Literally everything besides Startup.lua
+
+# To-Do
+* Add support for arsenal, bedwars, and some simulators

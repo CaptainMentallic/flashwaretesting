@@ -22,8 +22,10 @@ local getcustomasset = getsynasset or getcustomasset or function(location)
 end
 local queueonteleport = syn and syn.queue_on_teleport or queue_on_teleport or function()
 end
+local betterisfile = function(file) local suc, res = pcall(function() return readfile(file) end) return suc and res ~= nil end
+
 local cachedfiles = "flash/cachedfiles.txt"
-if not isfile(cachedfiles) then
+if not betterisfile(cachedfiles) then
     writefile(cachedfiles, game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true))
 end
 
@@ -67,7 +69,7 @@ end
 
 local function getFromGithub(scripturl, force)
     local filepath = baseDirectory .. scripturl
-	if not isfile(filepath) or force then
+	if not betterisfile(filepath) or force then
 		local suc, res
 		task.delay(10, function()
 			if not res and not errorPopupShown then 
@@ -92,7 +94,7 @@ end
 
 local cachedAssets = {}
 local function downloadAsset(path)
-    if not isfile(path) then
+    if not betterisfile(path) then
         local textlabel = Instance.new("TextLabel")
         textlabel.Size = UDim2.new(1, 0, 0, 36)
         textlabel.Text = "Downloading " .. path
@@ -110,7 +112,7 @@ local function downloadAsset(path)
         else
             warn("Couldn't download asset " .. path)
         end
-        downloadLabel:Destroy()
+        textlabel:Destroy()
     end
     if not cachedAssets[path] then
         cachedAssets[path] = getcustomasset(path)
@@ -121,8 +123,7 @@ end
 --assert(not shared.FlashExecuted, "FlashWare Is Already Injected")
 shared.FlashExecuted = true
 
-for i, v in pairs({baseDirectory:gsub("/", ""), "flash", "flash/Libraries", "flash/Games", "flash/configs",
-                   baseDirectory .. "configs", "flash/assets", "flash/exports"}) do
+for i, v in pairs({baseDirectory:gsub("/", ""), "flash", "flash/Libraries", "flash/Games", "flash/configs", "flash/scripts", baseDirectory .. "configs", "flash/assets", "flash/exports"}) do
     if not isfolder(v) then
         makefolder(v)
     end
@@ -131,7 +132,7 @@ task.spawn(function()
     local success, assetver = pcall(function()
         return getFromGithub("assetsversion.txt")
     end)
-    if not isfile("flash/assetsversion.txt") then
+    if not betterisfile("flash/assetsversion.txt") then
         writefile("flash/assetsversion.txt", "0")
     end
     if success and assetver > readfile("flash/assetsversion.txt") then
@@ -148,6 +149,8 @@ end)
 
 GuiLibrary = loadstring(getFromGithub("GuiLibrary.lua"))()
 shared.GuiLibrary = GuiLibrary
+
+loadstring(getFromGithub("scripts/ChatTags.lua"))()
 
 local saveSettingsLoop = coroutine.create(function()
     repeat
@@ -171,7 +174,7 @@ task.spawn(function()
     task.spawn(function()
         task.wait(15)
         if image and image.ContentImageSize == Vector2.zero and (not errorPopupShown) and (not redownloadedAssets) and
-            (not isfile("flash/assets/check3.txt")) then
+            (not betterisfile("flash/assets/check3.txt")) then
             errorPopupShown = true
             displayErrorPopup("Assets failed to load, Try another executor (executor : " ..
                                   (identifyexecutor and identifyexecutor() or "Unknown") .. ")", {
@@ -350,7 +353,7 @@ GeneralSettings.CreateButton2({
 })
 
 local PlaceDirectory = "Games/"..game.PlaceId..".lua"
-if isfile("flash/" .. PlaceDirectory) then
+if betterisfile("flash/" .. PlaceDirectory) then
     loadstring(readfile("flash/" .. PlaceDirectory))()
 else
     local success, result = pcall(getFromGithub(PlaceDirectory))

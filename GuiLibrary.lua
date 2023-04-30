@@ -6,7 +6,9 @@ if shared.FlashExecuted then
     end
     local LoadedSuccess = false
     local cachedfiles = "flash/cachedfiles.txt"
-    if not isfile(cachedfiles) then
+    local betterisfile = function(file) local suc, res = pcall(function() return readfile(file) end) return suc and res ~= nil end
+
+    if not betterisfile(cachedfiles) then
         writefile(cachedfiles, game:HttpGet("https://raw.githubusercontent.com/CaptainMentallic/flashwaretesting/main/cachedfiles.txt", true))
     end
     
@@ -85,7 +87,7 @@ if shared.FlashExecuted then
 
     local function getFromGithub(scripturl, force)
         local filepath = baseDirectory .. scripturl
-        if not isfile(filepath) or force then
+        if not betterisfile(filepath) or force then
             local suc, res
             task.delay(10, function()
                 if not res and not errorPopupShown then 
@@ -110,7 +112,7 @@ if shared.FlashExecuted then
 
     local cachedAssets = {}
     local function downloadAsset(path)
-        if not isfile(path) then
+        if not betterisfile(path) then
             local textlabel = Instance.new("TextLabel")
             textlabel.Size = UDim2.new(1, 0, 0, 36)
             textlabel.Text = "Downloading " .. path
@@ -128,7 +130,7 @@ if shared.FlashExecuted then
             else
                 warn("Couldn't download asset " .. path)
             end
-            downloadLabel:Destroy()
+            textlabel:Destroy()
         end
         if not cachedAssets[path] then
             cachedAssets[path] = getcustomasset(path)
@@ -414,7 +416,7 @@ if shared.FlashExecuted then
     GuiLibrary["SwitchConfig"] = function(configname)
         GuiLibrary.Configs[GuiLibrary.CurrentConfig]["ConfigEnabled"] = false
         GuiLibrary.Configs[configname]["ConfigEnabled"] = true
-        if (not isfile("flash/Configs/" .. (configname == "Default" and "" or configname) .. game.PlaceId ..
+        if (not betterisfile("flash/Configs/" .. (configname == "Default" and "" or configname) .. game.PlaceId ..
                            ".FlashConfig.txt")) then
             local config = GuiLibrary.CurrentConfig
             GuiLibrary.CurrentConfig = configname
