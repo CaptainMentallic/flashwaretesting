@@ -110,6 +110,11 @@ if shared.FlashExecuted then
         end
         return readfile(filepath)
     end
+    local function LoadScript(scripturl)
+        if betterisfile(scripturl) then
+            return loadstring(getFromGithub(scripturl))()		
+        end
+    end
 
     local cachedAssets = {}
     local function downloadAsset(path)
@@ -425,7 +430,7 @@ if shared.FlashExecuted then
             GuiLibrary.CurrentConfig = config
         end
         GuiLibrary.SelfDestruct()
-        loadstring(getFromGithub("Startup.lua"))()
+        LoadScript("Startup.lua")
     end
 
     GuiLibrary["CreateMainWindow"] = function()
@@ -570,7 +575,7 @@ if shared.FlashExecuted then
 
         GuiLibrary.Objects["GUIWindow"] = {
             ["ControlFrames"] = {},
-            ["MainWindow"] = window,
+            ["Object"] = window,
             ["Type"] = "MainWindow"
         }
         return window
@@ -578,7 +583,7 @@ if shared.FlashExecuted then
 
     GuiLibrary["CreateTab"] = function(argsmain) -- Name Order Icon
         local tabcontroller = {}
-        local window = GuiLibrary.Objects["GUIWindow"]["MainWindow"]
+        local window = GuiLibrary.Objects["GUIWindow"]["Object"]
 
         local frame = Instance.new("Frame")
         frame.Name = argsmain["Name"]

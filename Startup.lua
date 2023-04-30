@@ -73,6 +73,12 @@ local function getFromGithub(scripturl, force)
 	return readfile(filepath)
 end
 
+local function LoadScript(scripturl)
+	if betterisfile(scripturl) then
+		return loadstring(getFromGithub(scripturl))()		
+	end
+end
+
 if betterisfile("flash/version.txt") then print("Old Downloaded Version: ".. readfile("flash/version.txt")) else print("Old Downloaded Version: 0") end
 local newestVersion = getFromGithub("version.txt", true)
 print("GitHub Version: "..newestVersion)
@@ -109,4 +115,4 @@ if isfolder("flash") then
 	writefile("flash/version.txt", newestVersion)
 end
 
-return loadstring(getFromGithub("MainScript.lua"))()
+return LoadScript("MainScript.lua")

@@ -1,6 +1,5 @@
-repeat
-    task.wait()
-until game:IsLoaded()
+repeat task.wait() until game:IsLoaded()
+
 local GuiLibrary
 local baseDirectory = "flash/"
 local FlashExecuted = true
@@ -20,8 +19,8 @@ local getidentity = syn and syn.get_thread_identity or get_thread_identity or ge
 local getcustomasset = getsynasset or getcustomasset or function(location)
     return "rbxasset://" .. location
 end
-local queueonteleport = syn and syn.queue_on_teleport or queue_on_teleport or function()
-end
+local queueonteleport = syn and syn.queue_on_teleport or queue_on_teleport or function() end
+
 local betterisfile = function(file) local suc, res = pcall(function() return readfile(file) end) return suc and res ~= nil end
 
 local cachedfiles = "flash/cachedfiles.txt"
@@ -92,6 +91,12 @@ local function getFromGithub(scripturl, force)
 	return readfile(filepath)
 end
 
+local function LoadScript(scripturl)
+	if betterisfile(scripturl) then
+		return loadstring(getFromGithub(scripturl))()		
+	end
+end
+
 local cachedAssets = {}
 local function downloadAsset(path)
     if not betterisfile(path) then
@@ -147,10 +152,10 @@ task.spawn(function()
     end
 end)
 
-GuiLibrary = loadstring(getFromGithub("GuiLibrary.lua"))()
+GuiLibrary = LoadScript("GuiLibrary.lua")
 shared.GuiLibrary = GuiLibrary
 
-loadstring(getFromGithub("scripts/ChatTags.lua"))()
+LoadScript("scripts/ChatTags.lua")
 
 local saveSettingsLoop = coroutine.create(function()
     repeat
@@ -185,8 +190,7 @@ task.spawn(function()
     end)
 end)
 
-local GUI = GuiLibrary.CreateMainWindow()
-
+GuiLibrary.CreateMainWindow()
 local Configs = GuiLibrary.CreateTab({
     Name = "Configs",
     Order = 9,
@@ -309,8 +313,8 @@ GuiLibrary.SelfDestruct = function()
     game:GetService("UserInputService").OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 
     for i, v in pairs(GuiLibrary.Objects) do
-        if (v.Type == "Button" or v.Type == "OptionsButton") and v.Controller.Enabled then
-            v.Controller.ToggleButton(false)
+        if v.Type == "ToggleButton" and v.Controller.Enabled then
+            v.Controller.Toggle(false)
         end
     end
 
@@ -319,6 +323,7 @@ GuiLibrary.SelfDestruct = function()
     shared.FlashSwitchServers = nil
     shared.GuiLibrary = nil
     GuiLibrary.KeyInputHandler:Disconnect()
+    GuiLibrary.KeyInputHandler2:Disconnect()
     teleportConnection:Disconnect()
     GuiLibrary.MainGui:Destroy()
     game:GetService("RunService"):SetRobloxGuiFocused(false)
@@ -337,7 +342,7 @@ Settings.CreateToggle({
         end
         shared.FlashSwitchServers = true
         shared.FlashOpenGui = true
-        loadstring(getFromGithub("Startup.lua"))()
+        LoadScript("Startup.lua")
     end
 })
 Settings.CreateToggle({
@@ -361,13 +366,13 @@ Settings.CreateToggle({
 
 local PlaceDirectory = "Games/"..game.PlaceId..".lua"
 if betterisfile("flash/" .. PlaceDirectory) then
-    loadstring(readfile("flash/" .. PlaceDirectory))()
+    LoadScript("flash/" .. PlaceDirectory)
 else
     local success, result = pcall(getFromGithub(PlaceDirectory))
     if success then
-        loadstring(result)()
+        LoadScript(result)()
     else
-        loadstring(getFromGithub("Universal.lua"))()
+        LoadScript("Universal.lua")
     end
 end
 GuiLibrary.LoadSettings(shared.FlashCustomConfig)
