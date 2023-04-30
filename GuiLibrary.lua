@@ -462,7 +462,7 @@ if shared.FlashExecuted then
         GameLabel.Name = "GameLabel"
         GameLabel.BackgroundTransparency = 1
         GameLabel.Font = Enum.Font.DenkOne
-        GameLabel.Text = shared.CurrentLoad or ""
+        GameLabel.Text = "Universal" --shared.CurrentLoad or ""
         GameLabel.Size = UDim2.new(0.2, 0, 0.074, 0)
         GameLabel.Position = UDim2.new(1.092, 0, 1.096, 0)
         GameLabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
