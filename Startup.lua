@@ -71,9 +71,10 @@ local function getFromGithub(scripturl, force)
 	return readfile(filepath)
 end
 
+print("Current Version: "..readfile("flash/version.txt"))
 local newestVersion = getFromGithub("version.txt", true)
 print("GitHub Version: "..newestVersion)
-print("Current Version: "..readfile("flash/version.txt"))
+print("Updated Version:"..readfile("flash/version.txt"))
 if isfolder("flash") then
     if (readfile("flash/version.txt") < newestVersion) then
         for i, v in pairs({"flash/Universal.lua", "flash/MainScript.lua", "flash/GuiLibrary.lua"}) do

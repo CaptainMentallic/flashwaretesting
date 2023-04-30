@@ -16,6 +16,7 @@ if shared.FlashExecuted then
         CurrentConfig = "Default",
         ToggleNotifications = false,
         Notifications = false,
+        PressedKeyBindKey = false,
         Objects = {},
         Colors = {
             BACKGROUND_COLOR = Color3.fromRGB(62, 66, 71),
@@ -244,8 +245,6 @@ if shared.FlashExecuted then
     notificationwindow.Size = UDim2.new(1, 0, 1, 0)
     notificationwindow.Parent = GuiLibrary["MainGui"]
 
-    local vTextSize = serv.TextService:GetTextSize("v" .. Version, 25, Enum.Font.Arial, Vector2.new(999999, 999999))
-
     local hudgui = Instance.new("Frame")
     hudgui.Name = "HudGui"
     hudgui.Size = UDim2.new(1, 0, 1, 0)
@@ -463,7 +462,7 @@ if shared.FlashExecuted then
         GameLabel.Name = "GameLabel"
         GameLabel.BackgroundTransparency = 1
         GameLabel.Font = Enum.Font.DenkOne
-        GameLabel.Text = shared.CurrentLoad
+        GameLabel.Text = shared.CurrentLoad or ""
         GameLabel.Size = UDim2.new(0.2, 0, 0.074, 0)
         GameLabel.Position = UDim2.new(1.092, 0, 1.096, 0)
         GameLabel.TextColor3 = GuiLibrary.Colors.LABEL_COLOR
@@ -481,7 +480,7 @@ if shared.FlashExecuted then
         GameLabelShadow.Name = "GameLabelShadow"
         GameLabelShadow.BackgroundTransparency = 1
         GameLabelShadow.Font = Enum.Font.DenkOne
-        GameLabelShadow.Text = shared.CurrentLoad
+        GameLabelShadow.Text = shared.CurrentLoad or ""
         GameLabelShadow.Size = UDim2.new(1, 0, 1, 0)
         GameLabelShadow.Position = UDim2.new(0.019, 0, 0.029, 0)
         GameLabelShadow.TextColor3 = Color3.fromRGB(157, 157, 157)
@@ -570,8 +569,8 @@ if shared.FlashExecuted then
             local oldValue = shared.CurrentLoad
             task.wait(0.8)
             if oldValue ~= shared.CurrentLoad then
-                GameLabel.Text = shared.CurrentLoad
-                GameLabelShadow.Text = shared.CurrentLoad
+                GameLabel.Text = shared.CurrentLoad or ""
+                GameLabelShadow.Text = shared.CurrentLoad or ""
             end
         until not shared.FlashExecuted
 
@@ -1007,7 +1006,7 @@ if shared.FlashExecuted then
         textlabel1.Position = UDim2.new(0, 46, 0, 18)
         textlabel1.TextXAlignment = Enum.TextXAlignment.Left
         textlabel1.TextYAlignment = Enum.TextYAlignment.Top
-        textlabel1.Text = "<b>" .. (translations[top] ~= nil and translations[top] or top) .. "</b>"
+        textlabel1.Text = "<b>" .. top .. "</b>"
         textlabel1.Parent = frame
         local textlabel2 = textlabel1:Clone()
         textlabel2.Position = UDim2.new(0, 46, 0, 44)
@@ -1065,11 +1064,9 @@ if shared.FlashExecuted then
     end)
 
     GuiLibrary["KeyInputHandler2"] = serv.UserInputService.InputEnded:Connect(function(input)
-        if input.KeyCode == Enum.KeyCode.RightAlt then
             if input.KeyCode == Enum.KeyCode.LeftControl or Enum.KeyCode.RightControl then
                 holdingctrl = false
             end
-        end
     end)
 
     searchbar:GetPropertyChangedSignal("Text"):Connect(function()
