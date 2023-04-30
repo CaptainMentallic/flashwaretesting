@@ -195,7 +195,7 @@ local Configs = GuiLibrary.CreateTab({
 local Settings = GuiLibrary.CreateTab({
     Name = "Settings",
     Order = 10,
-    Icon = "assets/SettingIcon.png"
+    Icon = "assets/SettingsIcon.png"
 })
 
 Settings.CreateToggle({
